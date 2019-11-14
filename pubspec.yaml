@@ -1,0 +1,8 @@
+name: happypass
+description: Http &#x2F; Https library to speed your development, and feel happy every day!
+version: 1.0.0
+homepage: https://github.com/CimZzz/happypass
+author: wangyanxiong <a1950207@gmail.com>
+
+environment:
+  sdk: '>=2.2.0 <3.0.0'
