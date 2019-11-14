@@ -17,7 +17,7 @@ class Utf8String2ByteEncoder extends HttpMessageEncoder {
             return utf8.encode(message);
         }
 
-        return null;
+        return message;
     }
 }
 
@@ -30,6 +30,6 @@ class JSON2Utf8StringEncoder extends HttpMessageEncoder {
         if(message is Map) {
             return json.encode(message);
         }
-        return null;
+        return message;
     }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:happypass/happypass.dart';
 
 void main() async {
@@ -7,9 +9,6 @@ void main() async {
 	protoType.addLastDecoder(const Utf8String2JSONDecoder());
 	protoType.setUrl("http://quan.suning.com/getSysTime.do");
 	protoType.addFirstInterceptor(SimplePassInterceptor((chain) async {
-//		print("url: ${chain.modifier.getUrl()}");
-//		final resp = await chain.waitResponse();
-//		print("resp: $resp");
 		return chain.waitResponse();
 	}));
 

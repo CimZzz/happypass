@@ -123,7 +123,7 @@ class Request extends _BaseRequest {
             return await interceptorChain._intercept();
         }
         catch(e) {
-            return ErrorPassResponse(msg: "拦截发生异常", error: e);
+            return ErrorPassResponse(msg: "拦截发生异常: $e", error: e);
         }
 
     }

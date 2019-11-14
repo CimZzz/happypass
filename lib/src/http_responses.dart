@@ -14,7 +14,7 @@ abstract class ResultPassResponse extends PassResponse {
 class ErrorPassResponse extends ResultPassResponse {
     ErrorPassResponse({this.msg, this.error}): super(false);
     final String msg;
-    final Error error;
+    final dynamic error;
 
     @override
     String toString() => msg;
@@ -26,7 +26,7 @@ class SuccessPassResponse extends ResultPassResponse {
     final dynamic body;
 
     @override
-    String toString() => "success pass response: $body";
+    String toString() => "$body";
 }
 
 /// Http 加工的响应体

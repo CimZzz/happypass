@@ -143,7 +143,7 @@ class PassInterceptorChain{
             return ProcessablePassResponse(httpResp, responseBody, decoderMessage);
         }
         catch(e) {
-            return ErrorPassResponse(msg: "请求发生异常", error: e);
+            return ErrorPassResponse(msg: "请求发生异常: $e", error: e);
         }
         finally {
             if(client != null) {
@@ -170,7 +170,7 @@ typedef SimplePassInterceptorCallback = Future<PassResponse> Function(PassInterc
 /// 简单的请求拦截器
 /// 将拦截的逻辑放到回调闭包中实现
 class SimplePassInterceptor extends PassInterceptor {
-    const SimplePassInterceptor(this._callback);
+    SimplePassInterceptor(this._callback);
     final SimplePassInterceptorCallback _callback;
 
     @override
