@@ -330,7 +330,7 @@ request.setUrl("https://www.baidu.com/")
 	print("延时2秒执行");
 	// 假设创建 Isolate
 	await Future.delayed(const Duration(seconds: 2));
-    // 使用 executor.execute 方法执行请求
+    // 使用 executor
 	return executor.execute();
 })
 // 设置解码器
