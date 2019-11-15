@@ -111,3 +111,203 @@ print(await request.doRequest());
 
 解码器先通过 `Byte2Utf8StringDecoder` 将 `List<int>` 转换为 `JSON` 字符串，在通过 `Utf8String2ByteEncoder` 将 `JSON` 字符串转换为 `Map`
 
+### 拦截器
+
+[查看测试代码](example/example4.dart)
+
+拦截器负责处理 `Request` 和生成 `Response`。默认情况下，每个请求都会携带一个缺省的拦截器 `BusinessPassInterceptor`，该拦截器主要的目的就是将请求
+转化为对应的 `Response`
+
+可以给请求配置拦截器观察一下执行流程:
+```dart
+// 通过 [Request.construct] 方法直接创建实例
+Request request = Request.construct();
+// 设置 Request 路径
+request.setUrl("https://www.baidu.com/")
+// 设置 Request 头部
+.setRequestHeader("Hello", "World")
+// 设置解码器
+.addLastDecoder(const Byte2Utf8StringDecoder())
+// 添加拦截器
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain A");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain B");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain C");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain D");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain E");
+	return chain.waitResponse();
+}))
+// GET 请求
+.GET();
+// 发送请求并打印响应结果
+print(await request.doRequest());
+```
+
+执行结果如下:
+```text
+chain E
+chain D
+chain C
+chain B
+chain A
+...
+// real response data
+```
+
+拦截器采取的方式是首位插入，所以最先添加的拦截器最后执行
+
+正常情况下，拦截器的工作应该如下
+
+pass request : E -> D -> C -> B -> A -> BusinessPassInterceptor
+
+return response : BusinessPassInterceptor -> A -> B -> C -> D -> E
+
+上述完成了一次拦截工作，Request 的处理和 Response 的构建都在 BusinessPassInterceptor 这个拦截器中完成
+
+如果在特殊情况下，某个拦截器（假设 B）意图自己完成请求处理，那么整个流程如下:
+
+pass request : E -> D -> C -> B
+
+return response : B -> C -> D -> E
+
+上述在 B 的位置直接拦截，请求并未传递到 BusinessPassInterceptor，所以 Request 的处理和 Response 的构建都应由 B 完成
+
+这次我们在 B 点进行拦截
+
+```dart
+// 通过 [Request.construct] 方法直接创建实例
+Request request = Request.construct();
+
+// 设置 Request 路径
+request.setUrl("https://www.baidu.com/")
+// 设置解码器
+.addLastDecoder(const Byte2Utf8StringDecoder())
+// 添加拦截器
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain A");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain B");
+	// 这次我们在 B 点直接执行请求
+	return chain.requestForPassResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain C");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain D");
+	return chain.waitResponse();
+}))
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	print("chain E");
+	return chain.waitResponse();
+}))
+// GET 请求
+.GET();
+
+// 发送请求并打印响应结果
+print(await request.doRequest());
+```
+
+执行结果如下
+```text
+chain E
+chain D
+chain C
+chain B
+...
+// real response data
+```
+
+拦截器回调参数中的 `PassInterceptorChain` 提供了一些便捷的方法:
+```dart
+class PassInterceptorChain {
+
+    ...
+
+    /// 等待其他拦截器返回 `Response`
+    Future<PassResponse> waitResponse() async
+    
+    /// 获取拦截链请求修改器
+    /// 可以在拦截器中修改请求的大部分参数，直到有 `PassResponse` 返回
+    ChainRequestModifier get modifier;
+    
+    /// 实际执行 `Request` 获得 `Response`
+    /// 提供了一些可选回调，最大限度满足自定义 Request 的自由
+    Future<PassResponse> requestForPassResponse async ({
+        /// HttpClient 构造器
+        /// 可以自定义 HttpClient 的构造方式
+        HttpClient httpClientBuilder(),
+        /// HttpClientRequest 构造器
+        /// 可以自定义 HttpClientRequest 的构造方式
+        Future<HttpClientRequest> httpReqBuilder(HttpClient client, ChainRequestModifier modifier),
+        /// HttpClientRequest 消息配置构造
+        /// 用于配置请求头，发送请求 Body
+        /// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
+        PassResponse httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
+        /// HttpClientResponse 构造器
+        /// 可以自定义 HttpClientResponse 的构造方式
+        Future<HttpClientResponse> httpRespBuilder(HttpClientRequest httpReq),
+        /// Response Body 构造器
+        /// 可以自行读取响应数据并对其修改，视为最终返回数据
+        Future<List<int>> responseBodyBuilder(HttpClientResponse httpResp)
+    });
+
+    ...
+}
+```
+
+具体的细节逻辑可以参考[源代码](lib/src/http_interceptors.dart)
+
+### 请求原型
+
+[查看测试代码](example/example4.dart)
+
+避免大量不必要的请求配置操作，可以使用请求原型来实现快速构建配置相同的请求
+
+```dart
+// 通过 [Request.construct] 方法直接创建实例
+RequestPrototype requestPrototype = RequestPrototype();
+
+// 设置 Request 路径
+requestPrototype.setUrl("https://www.baidu.com/")
+// 设置 Request 头部
+.setRequestHeader("Hello", "World")
+// 设置解码器
+.addLastDecoder(const Byte2Utf8StringDecoder())
+// 添加拦截器
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	return chain.waitResponse();
+}));
+// 不允许原型配置请求方法
+//.GET();
+
+// 由原型孵化出 Request
+final request1 = requestPrototype.spawn();
+final request2 = requestPrototype.spawn();
+final request3 = requestPrototype.spawn();
+// 异步执行所有请求
+request1.GET().doRequest();
+request2.GET().doRequest();
+request3.GET().doRequest();
+// 发送请求并打印响应结果
+print("request1 : ${await request1.doRequest()}");
+print("request2 : ${await request2.doRequest()}");
+print("request3 : ${await request3.doRequest()}");
+```
+
+需要注意的是，为了避免 `RequestPrototype` 持有大量 `body` 而导致的内存问题，所以禁止 `Prototype` 配置请求方法。

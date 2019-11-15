@@ -2,15 +2,15 @@ part of 'http.dart';
 
 /// 拦截器处理链
 /// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
+/// 拦截器采取的方式是首位插入，所以最先添加的拦截器最后执行
 /// 正常情况下，拦截器的工作应该如下
-/// pass request : A -> B -> C -> D -> ... -> BusinessPassInterceptor
-/// return response : BusinessPassInterceptor -> ... -> D -> C -> B -> A
+/// pass request : E -> D -> C -> B -> A -> BusinessPassInterceptor
+/// return response : BusinessPassInterceptor -> A -> B -> C -> D -> E
 /// 上述完成了一次拦截工作，Request 的处理和 Response 的构建都在 BusinessPassInterceptor 这个拦截器中完成
-/// 如果在特殊情况下，某个拦截器（假设 D）意图自己完成请求处理，那么整个流程如下:
-/// pass request : A -> B -> C -> D
-/// return response : D -> C -> B -> A
-/// 上述在 D 的位置直接拦截，请求并未传递到 BusinessPassInterceptor，所以 Request 的处理和 Response 的构建
-/// 都应由 D 完成
+/// 如果在特殊情况下，某个拦截器（假设 B）意图自己完成请求处理，那么整个流程如下:
+/// pass request : E -> D -> C -> B
+/// return response : B -> C -> D -> E
+/// 上述在 B 的位置直接拦截，请求并未传递到 BusinessPassInterceptor，所以 Request 的处理和 Response 的构建都应由 B 完成
 ///
 /// 需要注意的是，如果拦截器只是对 Request 进行修改或者观察，并不想实际处理的话，请调用
 /// [PassInterceptorChain.waitResponse] 方法，表示将 Request 向下传递，然后将其结果返回表示将 Response 向上返回。
@@ -66,74 +66,91 @@ class PassInterceptorChain{
     /// 可以在拦截器中修改请求的大部分参数，直到有 `PassResponse` 返回
     ChainRequestModifier get modifier => this._chainRequestModifier;
 
-
+    /// 等待其他拦截器返回 `Response`
     Future<PassResponse> waitResponse() async {
         return await _waitResponse(this._currentIdx + 1);
     }
 
-    Future<PassResponse> requestForPassResponse() async {
+    /// 实际执行 `Request` 获得 `Response`
+    /// 提供了一些可选回调，最大限度满足自定义 Request 的自由
+    Future<PassResponse> requestForPassResponse({
+        /// HttpClient 构造器
+        /// 可以自定义 HttpClient 的构造方式
+        HttpClient httpClientBuilder(),
+
+        /// HttpClientRequest 构造器
+        /// 可以自定义 HttpClientRequest 的构造方式
+        Future<HttpClientRequest> httpReqBuilder(HttpClient client, ChainRequestModifier modifier),
+
+        /// HttpClientRequest 消息配置构造
+        /// 用于配置请求头，发送请求 Body
+        /// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
+        PassResponse httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
+
+        /// HttpClientResponse 构造器
+        /// 可以自定义 HttpClientResponse 的构造方式
+        Future<HttpClientResponse> httpRespBuilder(HttpClientRequest httpReq),
+
+        /// Response Body 构造器
+        /// 可以自行读取响应数据并对其修改，视为最终返回数据
+        Future<List<int>> responseBodyBuilder(HttpClientResponse httpResp)
+    }) async {
         HttpClient client;
         HttpClientRequest httpReq;
         try {
-            client = HttpClient();
-            final requestBuilder = this.modifier;
-            final method = requestBuilder.getRequestMethod();
-            final url = requestBuilder.getUrl();
+            client = httpClientBuilder != null ? httpClientBuilder() : HttpClient();
+            final chainRequestModifier = this.modifier;
+            final method = chainRequestModifier.getRequestMethod();
 
             // 创建请求对象
-            if(method == RequestMethod.POST) {
-                httpReq = await client.postUrl(Uri.parse(url));
+            if(httpReqBuilder != null) {
+                httpReq = await httpReqBuilder(client, chainRequestModifier);
             }
             else {
-                httpReq = await client.getUrl(Uri.parse(url));
+                final url = chainRequestModifier.getUrl();
+                if (method == RequestMethod.POST) {
+                    httpReq = await client.postUrl(Uri.parse(url));
+                }
+                else {
+                    httpReq = await client.getUrl(Uri.parse(url));
+                }
             }
 
-            // 填充请求头部
-            requestBuilder.forEachRequestHeaders((key, value) {
-                httpReq.headers.add(key, value);
-            });
+            PassResponse resultResp;
+            if(httpReqInfoBuilder != null) {
+                resultResp = httpReqInfoBuilder(httpReq, chainRequestModifier);
+            }
+            else {
+                chainRequestModifier.fillRequestHeader(httpReq);
+                resultResp = chainRequestModifier.fillRequestBody(httpReq);
+            }
+
+            if(resultResp != null) {
+                return resultResp;
+            }
+
+            HttpClientResponse httpResp;
+            if(httpRespBuilder != null) {
+                httpResp = await httpReq.close();
+            }
+            else {
+                httpResp = await httpReq.close();
+            }
 
 
-            // POST 方法会发送请求体
-            if(method == RequestMethod.POST) {
-                dynamic body = requestBuilder.getRequestBody();
-                // POST 方法的 body 不能为 null
-                if(body == null) {
-                    return ErrorPassResponse(msg: "[POST] \"body\" 不能为 \"null\"");
-                }
-                // 将发送的消息进行编码，最后转换为 `List<int>` 类型消息
-                dynamic message = body;
-                ErrorPassResponse errorResp;
-                requestBuilder.forEachEncoder((encoder){
-                    final oldMessage = message;
-                    message = encoder.encode(message);
-                    if(message == null) {
-                        errorResp = ErrorPassResponse(msg: "[POST] 编码器 $encoder 编码消息 ${oldMessage.runtimeType} 时返回 \"null\"");
-                        return false;
-                    }
-                    return true;
+            List<int> responseBody;
+            if(responseBodyBuilder != null) {
+                responseBody = await responseBodyBuilder(httpResp);
+            }
+            else {
+                responseBody = List();
+                await httpResp.forEach((byteList) {
+                    responseBody.addAll(byteList);
                 });
-
-                if(errorResp != null) {
-                    return errorResp;
-                }
-
-                if(message is! List<int>) {
-                    return ErrorPassResponse(msg: "[POST] 最后的编码结果类型不为 \"List<int>\"");
-                }
-
-                httpReq.add(message);
             }
-
-            final httpResp = await httpReq.close();
-
-            final List<int> responseBody = List();
-            await httpResp.forEach((byteList) {
-                responseBody.addAll(byteList);
-            });
 
             dynamic decoderMessage = responseBody;
-            requestBuilder.forEachDecoder((decoder) {
+            chainRequestModifier.forEachDecoder((decoder) {
                 decoderMessage = decoder.decode(decoderMessage);
                 if(decoderMessage == null) {
                     return false;

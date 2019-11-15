@@ -1,6 +1,6 @@
 import 'package:happypass/happypass.dart';
 
-void main() {
+void main() async {
 	// 通过 [Request.construct] 方法直接创建实例
 	Request request = Request.construct();
 	// 设置 Request 路径

@@ -1,6 +1,6 @@
 part of 'http.dart';
 
-mixin _RequestBuilderBase<ReturnType> {
+mixin _RequestMixinBase<ReturnType> {
 	/// 所构建的请求
 	Request get _buildRequest;
 	/// 代理对象
@@ -9,7 +9,7 @@ mixin _RequestBuilderBase<ReturnType> {
 
 /// 请求运行代理配置混合
 /// 用于配置 Request 运行代理
-mixin _RequestRunProxyBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestRunProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置执行请求的代理方法
 	/// 应在代理接口中直接调用参数中的回调，不做其他任何操作
 	ReturnType setRequestRunProxy(RequestRunProxy proxy) {
@@ -21,7 +21,7 @@ mixin _RequestRunProxyBuilder<ReturnType> implements _RequestBuilderBase<ReturnT
 
 /// 请求拦截器配置混合
 /// 用于配置 Request 拦截器
-mixin _RequestInterceptorBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestInterceptorBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 拦截器列表
 	List<PassInterceptor> get _passInterceptors {
 		return _buildRequest._passInterceptorList ??= List();
@@ -39,7 +39,7 @@ mixin _RequestInterceptorBuilder<ReturnType> implements _RequestBuilderBase<Retu
 
 /// 请求拦截器清空混合
 /// 用于清空 Request 中所有的拦截器
-mixin _RequestInterceptorClearBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestInterceptorClearBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 清空全部拦截器
 	/// 注意的一点是，默认拦截器列表中存在 [BusinessPassInterceptor] 类作为基础的请求处理拦截器
 	ReturnType clearInterceptors() {
@@ -52,7 +52,7 @@ mixin _RequestInterceptorClearBuilder<ReturnType> implements _RequestBuilderBase
 
 /// 请求头部配置混合
 /// 用于配置 Request 头部
-mixin _RequestHeaderBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestHeaderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 头部表
 	Map<String, String> get _header {
 		return _buildRequest._headerMap ??= Map();
@@ -77,7 +77,7 @@ mixin _RequestHeaderBuilder<ReturnType> implements _RequestBuilderBase<ReturnTyp
 
 /// 请求地址配置混合
 /// 用于配置 Request Url
-mixin _RequestUrlBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置请求地址
 	ReturnType setUrl(String url) {
 		if (_buildRequest.checkExecutingStatus) {
@@ -92,7 +92,7 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> 
 
 /// 请求方法配置混合
 /// 用于配置 Request Method
-mixin _RequestMethodBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestMethodBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置 GET 请求
 	ReturnType GET() {
 		if (_buildRequest.checkExecutingStatus) {
@@ -125,7 +125,7 @@ mixin _RequestMethodBuilder<ReturnType> implements _RequestBuilderBase<ReturnTyp
 
 /// 请求编码器配置混合
 /// 用于配置 Request Encoders
-mixin _RequestEncoderBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 编码器列表
 	List<HttpMessageEncoder> get _encoders {
 		return _buildRequest._encoderList ??= List();
@@ -143,26 +143,12 @@ mixin _RequestEncoderBuilder<ReturnType> implements _RequestBuilderBase<ReturnTy
 		if (_buildRequest.checkExecutingStatus) _buildRequest._encoderList = null;
 		return _returnObj;
 	}
-
-	/// 遍历编码器
-	/// 返回 false，中断遍历
-	void forEachEncoder(bool callback(HttpMessageEncoder encoder)) {
-		if (_buildRequest._encoderList != null) {
-			int count = _buildRequest._encoderList.length;
-			for (int i = 0; i < count; i++) {
-				final encoder = _buildRequest._encoderList[i];
-				if (!callback(encoder)) {
-					break;
-				}
-			}
-		}
-	}
 }
 
 
 /// 请求解码器配置混合
 /// 用于配置 Request Decoders
-mixin _RequestDecoderBuilder<ReturnType> implements _RequestBuilderBase<ReturnType> {
+mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 解码器列表
 	List<HttpMessageDecoder> get _decoders {
 		return _buildRequest._decoderList ??= List();
@@ -197,12 +183,68 @@ mixin _RequestDecoderBuilder<ReturnType> implements _RequestBuilderBase<ReturnTy
 	}
 }
 
+/*填充 Mixin 混合*/
+
+/// 填充 Request 头部混合
+/// 用于填充 Request Headers
+mixin _RequestHeaderFiller<ReturnType> implements _RequestMixinBase<ReturnType> {
+	/// 将配置好的请求头部填充到 HttpClientRequest 中
+	ReturnType fillRequestHeader(HttpClientRequest httpReq) {
+		final headers = _buildRequest._headerMap;
+		if(headers != null && headers.isNotEmpty) {
+			headers.forEach((key, value) {
+				httpReq.headers.add(key, value);
+			});
+		}
+		return _returnObj;
+	}
+}
+
+/// 填充 Request 请求Body
+/// 用于填充经过编码器的 Request Body
+mixin _RequestBodyFiller<ReturnType> implements _RequestMethodBuilder<ReturnType> {
+	/// 将配置好的 Body 填充到 HttpClientRequest 中
+	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
+	/// 结果返回
+	PassResponse fillRequestBody(HttpClientRequest httpReq) {
+		// 目前只有 POST 方法会发送请求体
+		if(_buildRequest._requestMethod != RequestMethod.POST) {
+			return null;
+		}
+		dynamic body = _buildRequest._body;
+		// POST 方法的 body 不能为 null
+		if(body == null) {
+			return ErrorPassResponse(msg: "[POST] \"body\" 不能为 \"null\"");
+		}
+
+		dynamic message = body;
+		if (_buildRequest._encoderList != null) {
+			int count = _buildRequest._encoderList.length;
+			for (int i = 0; i < count; i++) {
+				final encoder = _buildRequest._encoderList[i];
+				final oldMessage = message;
+				message = encoder.encode(message);
+				if(message == null) {
+					message = oldMessage;
+				}
+			}
+		}
+
+		if(message is! List<int>) {
+			return ErrorPassResponse(msg: "[POST] 最后的编码结果类型不为 \"List<int>\"");
+		}
+
+		httpReq.add(message);
+
+		return null;
+	}
+}
 
 
 /*组合 Mixin 基类*/
 
 /// 请求基类
-abstract class _BaseRequest with _RequestBuilderBase<Request>,
+abstract class _BaseRequest with _RequestMixinBase<Request>,
 		_RequestRunProxyBuilder<Request>,
 		_RequestInterceptorBuilder<Request>,
 		_RequestInterceptorClearBuilder<Request>,
@@ -221,7 +263,7 @@ abstract class _BaseRequest with _RequestBuilderBase<Request>,
 
 /// 请求原型基类
 /// 原型不能构造请求方法，防止因为持有大量请求体 (body) 而导致内存问题
-abstract class _BaseRequestPrototype<RequestPrototype> with _RequestBuilderBase<RequestPrototype>,
+abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<RequestPrototype>,
 		_RequestRunProxyBuilder<RequestPrototype>,
 		_RequestInterceptorBuilder<RequestPrototype>,
 		_RequestInterceptorClearBuilder<RequestPrototype>,
@@ -239,12 +281,15 @@ abstract class _BaseRequestPrototype<RequestPrototype> with _RequestBuilderBase<
 /// - 修改请求方法
 /// - 修改请求编码器
 /// - 修改请求解码器
-class ChainRequestModifier with _RequestBuilderBase<ChainRequestModifier>,
+class ChainRequestModifier with _RequestMixinBase<ChainRequestModifier>,
 		_RequestHeaderBuilder<ChainRequestModifier>,
 		_RequestUrlBuilder<ChainRequestModifier>,
 		_RequestMethodBuilder<ChainRequestModifier>,
 		_RequestEncoderBuilder<ChainRequestModifier>,
-		_RequestDecoderBuilder<ChainRequestModifier>
+		_RequestDecoderBuilder<ChainRequestModifier>,
+		/* 填充混合 */
+		_RequestHeaderFiller<ChainRequestModifier>,
+		_RequestBodyFiller<ChainRequestModifier>
 {
 	ChainRequestModifier(this._request);
 	final Request _request;
