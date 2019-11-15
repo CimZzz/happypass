@@ -275,7 +275,7 @@ class PassInterceptorChain {
 
 ### 请求原型
 
-[查看测试代码](example/example4.dart)
+[查看测试代码](example/example5.dart)
 
 避免大量不必要的请求配置操作，可以使用请求原型来实现快速构建配置相同的请求
 
@@ -311,3 +311,36 @@ print("request3 : ${await request3.doRequest()}");
 ```
 
 需要注意的是，为了避免 `RequestPrototype` 持有大量 `body` 而导致的内存问题，所以禁止 `Prototype` 配置请求方法。
+
+#### 请求运行环境代理
+
+[查看测试代码](example/example6.dart)
+
+`Request` 默认会在当前 `Isolate` 下执行请求，而一些比如 `Flutter` 主 `Isolate` 通常会做一些 `UI` 渲染相关工作，大量的请求很可能会
+导致其 `UI` 卡顿。因此，我们可以配置 `Request` 运行环境代理，将请求放到其他 `Isolate` 中执行，以此达到优化的目的
+
+```dart
+// 通过 [Request.construct] 方法直接创建实例
+Request request = Request.construct();
+// 设置 Request 路径
+request.setUrl("https://www.baidu.com/")
+// 设置 Request 运行环境
+.setRequestRunProxy((executor) async {
+	print("执行请求");
+	print("延时2秒执行");
+	// 假设创建 Isolate
+	await Future.delayed(const Duration(seconds: 2));
+    // 使用 executor.execute 方法执行请求
+	return executor.execute();
+})
+// 设置解码器
+.addLastDecoder(const Byte2Utf8StringDecoder())
+// 添加拦截器
+.addFirstInterceptor(SimplePassInterceptor((chain) {
+	return chain.waitResponse();
+}))
+// GET 请求
+.GET();
+// 发送请求并打印响应结果
+print(await request.doRequest());
+```
