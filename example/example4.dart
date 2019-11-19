@@ -4,6 +4,29 @@ void main() async {
 	await interceptAtB();
 }
 
+class SimpleIntercept1 extends PassInterceptor {
+	const SimpleIntercept1(this.name);
+
+	final String name;
+
+	@override
+	Future<PassResponse> intercept(PassInterceptorChain chain) {
+		print(name);
+		return chain.waitResponse();
+	}
+}
+
+class SimpleIntercept2 extends PassInterceptor {
+	const SimpleIntercept2(this.name);
+
+	final String name;
+
+	@override
+	Future<PassResponse> intercept(PassInterceptorChain chain) {
+		print(name);
+		return chain.requestForPassResponse();
+	}
+}
 
 void generalIntercept() async {
 	// 通过 [Request.construct] 方法直接创建实例
@@ -16,26 +39,11 @@ void generalIntercept() async {
 	// 设置解码器
 	.addLastDecoder(const Byte2Utf8StringDecoder())
 	// 添加拦截器
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain A");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain B");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain C");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain D");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain E");
-		return chain.waitResponse();
-	}))
+	.addFirstInterceptor(const SimpleIntercept1("Chain A"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain B"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain C"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain D"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain E"))
 	// GET 请求
 	.GET();
 
@@ -54,27 +62,11 @@ void interceptAtB() async {
 	// 设置解码器
 	.addLastDecoder(const Byte2Utf8StringDecoder())
 	// 添加拦截器
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain A");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain B");
-		// 这次我们在 B 点直接执行请求
-		return chain.requestForPassResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain C");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain D");
-		return chain.waitResponse();
-	}))
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		print("chain E");
-		return chain.waitResponse();
-	}))
+	.addFirstInterceptor(const SimpleIntercept1("Chain A"))
+	.addFirstInterceptor(const SimpleIntercept2("Chain B"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain C"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain D"))
+	.addFirstInterceptor(const SimpleIntercept1("Chain E"))
 	// GET 请求
 	.GET();
 

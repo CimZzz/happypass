@@ -11,9 +11,7 @@ void main() async {
 	// 设置解码器
 	.addLastDecoder(const Byte2Utf8StringDecoder())
 	// 添加拦截器
-	.addFirstInterceptor(SimplePassInterceptor((chain) {
-		return chain.waitResponse();
-	}));
+	.addFirstInterceptor(const LogUrlInterceptor());
 	// 不允许原型配置请求方法
 	//.GET();
 

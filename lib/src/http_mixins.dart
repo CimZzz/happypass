@@ -9,12 +9,24 @@ mixin _RequestMixinBase<ReturnType> {
 
 /// 请求运行代理配置混合
 /// 用于配置 Request 运行代理
-mixin _RequestRunProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+mixin _RequestRunProxySetBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置执行请求的代理方法
 	/// 应在代理接口中直接调用参数中的回调，不做其他任何操作
-	ReturnType setRequestRunProxy(RequestRunProxy proxy) {
-		if (_buildRequest.checkPrepareStatus) _buildRequest._runProxy = proxy;
+	ReturnType setRequestRunProxy(AsyncRunProxy proxy) {
+		if (_buildRequest.checkPrepareStatus) {
+			_buildRequest._runProxy = proxy;
+		}
+
 		return _returnObj;
+	}
+}
+
+/// 获取请求运行代理配置混合
+/// 用于获取 Request 运行代理
+mixin _RequestRunProxyGetBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	/// 获取请求的代理方法
+	AsyncRunProxy getRequestRunProxy() {
+		return _buildRequest._runProxy;
 	}
 }
 
@@ -206,7 +218,7 @@ mixin _RequestBodyFiller<ReturnType> implements _RequestMethodBuilder<ReturnType
 	/// 将配置好的 Body 填充到 HttpClientRequest 中
 	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
 	/// 结果返回
-	PassResponse fillRequestBody(HttpClientRequest httpReq) {
+	Future<PassResponse> fillRequestBody(HttpClientRequest httpReq, { bool useProxy = true }) async {
 		// 目前只有 POST 方法会发送请求体
 		if(_buildRequest._requestMethod != RequestMethod.POST) {
 			return null;
@@ -218,16 +230,9 @@ mixin _RequestBodyFiller<ReturnType> implements _RequestMethodBuilder<ReturnType
 		}
 
 		dynamic message = body;
-		if (_buildRequest._encoderList != null) {
-			int count = _buildRequest._encoderList.length;
-			for (int i = 0; i < count; i++) {
-				final encoder = _buildRequest._encoderList[i];
-				final oldMessage = message;
-				message = encoder.encode(message);
-				if(message == null) {
-					message = oldMessage;
-				}
-			}
+		final proxy = _buildRequest._runProxy;
+		if(proxy != null && useProxy) {
+			message = await proxy(_encodeMessage, _EncodeBundle(message, _buildRequest._encoderList));
 		}
 
 		if(message is! List<int>) {
@@ -238,14 +243,38 @@ mixin _RequestBodyFiller<ReturnType> implements _RequestMethodBuilder<ReturnType
 
 		return null;
 	}
+
+	static Future<dynamic> _encodeMessage(_EncodeBundle bundle) async {
+		var message = bundle._message;
+
+		if (bundle._encoderList != null) {
+			int count = bundle._encoderList.length;
+			for (int i = 0; i < count; i++) {
+				final encoder = bundle._encoderList[i];
+				final oldMessage = message;
+				message = encoder.encode(message);
+				if (message == null) {
+					message = oldMessage;
+				}
+			}
+		}
+		return message;
+	}
 }
+
+class _EncodeBundle {
+    const _EncodeBundle(this._message, this._encoderList);
+	final dynamic _message;
+	final List<HttpMessageEncoder> _encoderList;
+}
+
 
 
 /*组合 Mixin 基类*/
 
 /// 请求基类
 abstract class _BaseRequest with _RequestMixinBase<Request>,
-		_RequestRunProxyBuilder<Request>,
+		_RequestRunProxySetBuilder<Request>,
 		_RequestInterceptorBuilder<Request>,
 		_RequestInterceptorClearBuilder<Request>,
 		_RequestHeaderBuilder<Request>,
@@ -264,7 +293,7 @@ abstract class _BaseRequest with _RequestMixinBase<Request>,
 /// 请求原型基类
 /// 原型不能构造请求方法，防止因为持有大量请求体 (body) 而导致内存问题
 abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<RequestPrototype>,
-		_RequestRunProxyBuilder<RequestPrototype>,
+		_RequestRunProxySetBuilder<RequestPrototype>,
 		_RequestInterceptorBuilder<RequestPrototype>,
 		_RequestInterceptorClearBuilder<RequestPrototype>,
 		_RequestHeaderBuilder<RequestPrototype>,
@@ -281,12 +310,14 @@ abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<Re
 /// - 修改请求方法
 /// - 修改请求编码器
 /// - 修改请求解码器
+/// - 获取运行代理
 class ChainRequestModifier with _RequestMixinBase<ChainRequestModifier>,
 		_RequestHeaderBuilder<ChainRequestModifier>,
 		_RequestUrlBuilder<ChainRequestModifier>,
 		_RequestMethodBuilder<ChainRequestModifier>,
 		_RequestEncoderBuilder<ChainRequestModifier>,
 		_RequestDecoderBuilder<ChainRequestModifier>,
+		_RequestRunProxyGetBuilder<ChainRequestModifier>,
 		/* 填充混合 */
 		_RequestHeaderFiller<ChainRequestModifier>,
 		_RequestBodyFiller<ChainRequestModifier>

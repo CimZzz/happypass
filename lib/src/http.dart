@@ -26,18 +26,7 @@ enum RequestMethod {
 }
 
 /// 请求执行代理接口
-typedef RequestRunProxy = Future<ResultPassResponse> Function(RequestExecutor);
-
-/// 请求执行对象
-/// 用于请求执行代理接口，达到某些执行环境的要求，如 `Isolate` 不允许 Message 是一个闭包。
-class RequestExecutor {
-    RequestExecutor._(this._request);
-    final Request _request;
-
-    Future<ResultPassResponse> execute() {
-        return _request._execute();
-    }
-}
+typedef AsyncRunProxy = Future<Q> Function<T, Q>(Future<Q> Function(T), T message);
 
 /// 请求对象
 /// 对该对象进行配置，然后执行获取请求结果
@@ -67,10 +56,9 @@ class Request extends _BaseRequest {
     /// 请求完成 Future
     Completer<ResultPassResponse> _requestCompleter;
 
-    /// 执行请求代理接口回调
-    /// 比如在 `Flutter` 中，想用 `compute` 方法来执行请求的话，
-    /// 设置该执行代理即可
-    RequestRunProxy _runProxy;
+    /// 执行代理接口回调
+    /// 请求中部分操作比较耗时，可以设置该代理来实现真实异步执行（比如借助 Isolate）
+    AsyncRunProxy _runProxy;
 
     /// 存放请求拦截器
     List<PassInterceptor> _passInterceptorList = [const BusinessPassInterceptor()];
@@ -103,14 +91,7 @@ class Request extends _BaseRequest {
 
         _status = _RequestStatus.Executing;
         _requestCompleter = Completer();
-        if(_runProxy != null) {
-            // 借助代理执行请求
-            _requestCompleter.complete(_runProxy(RequestExecutor._(this)));
-        }
-        else {
-            _requestCompleter.complete(_execute());
-        }
-
+        _requestCompleter.complete(_execute());
         return _requestCompleter.future;
     }
 

@@ -73,6 +73,7 @@ class PassInterceptorChain{
 
     /// 实际执行 `Request` 获得 `Response`
     /// 提供了一些可选回调，最大限度满足自定义 Request 的自由
+    /// 默认情况下，在只在编码与解码时使用了执行代理
     Future<PassResponse> requestForPassResponse({
         /// HttpClient 构造器
         /// 可以自定义 HttpClient 的构造方式
@@ -181,11 +182,23 @@ abstract class PassInterceptor {
     Future<PassResponse> intercept(PassInterceptorChain chain);
 }
 
+/// 打印请求 Url 拦截器
+class LogUrlInterceptor extends PassInterceptor {
+    const LogUrlInterceptor();
+
+    @override
+    Future<PassResponse> intercept(PassInterceptorChain chain) {
+        print("current request url : " + chain.modifier.getUrl());
+        return chain.waitResponse();
+    }
+}
+
 /// 拦截器接口回调
 typedef SimplePassInterceptorCallback = Future<PassResponse> Function(PassInterceptorChain chain);
 
 /// 简单的请求拦截器
 /// 将拦截的逻辑放到回调闭包中实现
+/// 需要注意的是，闭包必须是 `static` 的
 class SimplePassInterceptor extends PassInterceptor {
     SimplePassInterceptor(this._callback);
     final SimplePassInterceptorCallback _callback;

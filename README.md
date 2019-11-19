@@ -36,9 +36,7 @@ request.setUrl("https://www.baidu.com/")
 // 设置解码器（将响应数据转换为 UTF8 字符串）
 .addLastDecoder(const Byte2Utf8StringDecoder())
 // 添加拦截器
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	return chain.waitResponse();
-}))
+.addFirstInterceptor(const LogUrlInterceptor())
 // GET 请求
 .GET();
 ```
@@ -118,6 +116,33 @@ print(await request.doRequest());
 拦截器负责处理 `Request` 和生成 `Response`。默认情况下，每个请求都会携带一个缺省的拦截器 `BusinessPassInterceptor`，该拦截器主要的目的就是将请求
 转化为对应的 `Response`
 
+首先声明两个拦截器:
+```dart
+class SimpleIntercept1 extends PassInterceptor {
+	const SimpleIntercept1(this.name);
+
+	final String name;
+
+	@override
+	Future<PassResponse> intercept(PassInterceptorChain chain) {
+		print(name);
+		return chain.waitResponse();
+	}
+}
+
+class SimpleIntercept2 extends PassInterceptor {
+	const SimpleIntercept2(this.name);
+
+	final String name;
+
+	@override
+	Future<PassResponse> intercept(PassInterceptorChain chain) {
+		print(name);
+		return chain.requestForPassResponse();
+	}
+}
+```
+
 可以给请求配置拦截器观察一下执行流程:
 ```dart
 // 通过 [Request.construct] 方法直接创建实例
@@ -129,26 +154,11 @@ request.setUrl("https://www.baidu.com/")
 // 设置解码器
 .addLastDecoder(const Byte2Utf8StringDecoder())
 // 添加拦截器
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain A");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain B");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain C");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain D");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain E");
-	return chain.waitResponse();
-}))
+.addFirstInterceptor(const SimpleIntercept1("Chain A"))
+.addFirstInterceptor(const SimpleIntercept1("Chain B"))
+.addFirstInterceptor(const SimpleIntercept1("Chain C"))
+.addFirstInterceptor(const SimpleIntercept1("Chain D"))
+.addFirstInterceptor(const SimpleIntercept1("Chain E"))
 // GET 请求
 .GET();
 // 发送请求并打印响应结果
@@ -195,27 +205,11 @@ request.setUrl("https://www.baidu.com/")
 // 设置解码器
 .addLastDecoder(const Byte2Utf8StringDecoder())
 // 添加拦截器
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain A");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain B");
-	// 这次我们在 B 点直接执行请求
-	return chain.requestForPassResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain C");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain D");
-	return chain.waitResponse();
-}))
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	print("chain E");
-	return chain.waitResponse();
-}))
+.addFirstInterceptor(const SimpleIntercept1("Chain A"))
+.addFirstInterceptor(const SimpleIntercept2("Chain B"))
+.addFirstInterceptor(const SimpleIntercept1("Chain C"))
+.addFirstInterceptor(const SimpleIntercept1("Chain D"))
+.addFirstInterceptor(const SimpleIntercept1("Chain E"))
 // GET 请求
 .GET();
 
@@ -290,9 +284,7 @@ requestPrototype.setUrl("https://www.baidu.com/")
 // 设置解码器
 .addLastDecoder(const Byte2Utf8StringDecoder())
 // 添加拦截器
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	return chain.waitResponse();
-}));
+.addFirstInterceptor(const LogUrlInterceptor());
 // 不允许原型配置请求方法
 //.GET();
 
@@ -336,9 +328,7 @@ request.setUrl("https://www.baidu.com/")
 // 设置解码器
 .addLastDecoder(const Byte2Utf8StringDecoder())
 // 添加拦截器
-.addFirstInterceptor(SimplePassInterceptor((chain) {
-	return chain.waitResponse();
-}))
+.addFirstInterceptor(const LogUrlInterceptor())
 // GET 请求
 .GET();
 // 发送请求并打印响应结果
