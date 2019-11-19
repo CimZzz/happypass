@@ -25,8 +25,10 @@ enum RequestMethod {
     POST
 }
 
+/// 请求执行代理回调接口
+typedef AsyncRunProxyCallback<T, Q> = Future<Q> Function(T);
 /// 请求执行代理接口
-typedef AsyncRunProxy = Future<Q> Function<T, Q>(Future<Q> Function(T), T message);
+typedef AsyncRunProxy = Future Function<T, Q>(AsyncRunProxyCallback<T, Q>, T);
 
 /// 请求对象
 /// 对该对象进行配置，然后执行获取请求结果

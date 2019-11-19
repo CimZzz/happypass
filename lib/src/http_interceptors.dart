@@ -88,13 +88,9 @@ class PassInterceptorChain{
         /// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
         PassResponse httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
 
-        /// HttpClientResponse 构造器
-        /// 可以自定义 HttpClientResponse 的构造方式
-        Future<HttpClientResponse> httpRespBuilder(HttpClientRequest httpReq),
-
         /// Response Body 构造器
         /// 可以自行读取响应数据并对其修改，视为最终返回数据
-        Future<List<int>> responseBodyBuilder(HttpClientResponse httpResp)
+        Future<PassResponse> responseBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier)
     }) async {
         HttpClient client;
         HttpClientRequest httpReq;
@@ -122,43 +118,27 @@ class PassInterceptorChain{
                 resultResp = httpReqInfoBuilder(httpReq, chainRequestModifier);
             }
             else {
-                chainRequestModifier.fillRequestHeader(httpReq);
-                resultResp = chainRequestModifier.fillRequestBody(httpReq);
+                await chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier);
+                resultResp = await chainRequestModifier.fillRequestBody(httpReq, chainRequestModifier);
             }
 
             if(resultResp != null) {
                 return resultResp;
             }
 
-            HttpClientResponse httpResp;
-            if(httpRespBuilder != null) {
-                httpResp = await httpReq.close();
+            PassResponse response;
+            if(responseBuilder != null) {
+                response = await responseBuilder(httpReq, modifier);
             }
             else {
-                httpResp = await httpReq.close();
+                response = await chainRequestModifier.analyzeResponse(httpReq, modifier);
             }
-
-
-            List<int> responseBody;
-            if(responseBodyBuilder != null) {
-                responseBody = await responseBodyBuilder(httpResp);
+            
+            if(response == null) {
+                return ErrorPassResponse(msg: "未能成功解析 Response");
             }
-            else {
-                responseBody = List();
-                await httpResp.forEach((byteList) {
-                    responseBody.addAll(byteList);
-                });
-            }
-
-            dynamic decoderMessage = responseBody;
-            chainRequestModifier.forEachDecoder((decoder) {
-                decoderMessage = decoder.decode(decoderMessage);
-                if(decoderMessage == null) {
-                    return false;
-                }
-                return true;
-            });
-            return ProcessablePassResponse(httpResp, responseBody, decoderMessage);
+            
+            return response;
         }
         catch(e) {
             return ErrorPassResponse(msg: "请求发生异常: $e", error: e);

@@ -258,7 +258,7 @@ class PassInterceptorChain {
         Future<HttpClientResponse> httpRespBuilder(HttpClientRequest httpReq),
         /// Response Body 构造器
         /// 可以自行读取响应数据并对其修改，视为最终返回数据
-        Future<List<int>> responseBodyBuilder(HttpClientResponse httpResp)
+        Future<PassResponse> responseBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier)
     });
 
     ...
@@ -309,28 +309,57 @@ print("request3 : ${await request3.doRequest()}");
 [查看测试代码](example/example6.dart)
 
 `Request` 默认会在当前 `Isolate` 下执行请求，而一些比如 `Flutter` 主 `Isolate` 通常会做一些 `UI` 渲染相关工作，大量的请求很可能会
-导致其 `UI` 卡顿。因此，我们可以配置 `Request` 运行环境代理，将请求放到其他 `Isolate` 中执行，以此达到优化的目的
+导致其 `UI` 卡顿。因此，我们可以配置 `Request` 运行环境代理，将请求某些操作（如对请求 `Body` 进行编码）放到其他 `Isolate` 中执行，以此达到优化的目的
+
+比如我们配置一个 Isolate 请求代理
 
 ```dart
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
-// 设置 Request 路径
-request.setUrl("https://www.baidu.com/")
-// 设置 Request 运行环境
-.setRequestRunProxy((executor) async {
-	print("执行请求");
-	print("延时2秒执行");
-	// 假设创建 Isolate
-	await Future.delayed(const Duration(seconds: 2));
-    // 使用 executor
-	return executor.execute();
-})
-// 设置解码器
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 添加拦截器
-.addFirstInterceptor(const LogUrlInterceptor())
-// GET 请求
-.GET();
-// 发送请求并打印响应结果
-print(await request.doRequest());
+class _Receiver<T, Q> {
+	_Receiver(this.message, this.callback, this.port);
+	final T message;
+	final AsyncRunProxyCallback<T, Q> callback;
+	final SendPort port;
+	
+	Future<Q> execute() async {
+		return await callback(message);
+	}
+}
+
+
+void _doProxy(_Receiver receiver) async {
+	try {
+		final result = await receiver.execute();
+		receiver.port.send(result);
+	}
+	catch(e) {
+		receiver.port.send(ErrorPassResponse());
+	}
+}
+
+void main() async {
+	// 通过 [Request.construct] 方法直接创建实例
+	Request request = Request.construct();
+	// 设置 Request 路径
+	request.setUrl("https://www.baidu.com/")
+	// 设置 Request 运行环境，放置到 Isolate 中执行
+	.setRequestRunProxy(<T, Q>(asyncCallback, message) async {
+		final receiverPort = ReceivePort();
+		final isolate = await Isolate.spawn(_doProxy, _Receiver(message, asyncCallback, receiverPort.sendPort));
+		final result = await receiverPort.first;
+		receiverPort.close();
+		isolate.kill();
+		if(result is ErrorPassResponse) {
+			throw IOException;
+		}
+		return result;
+	})
+	// 设置解码器
+	.addLastDecoder(const Byte2Utf8StringDecoder())
+	// 设置拦截器
+	.addFirstInterceptor(const LogUrlInterceptor())
+	// GET 请求
+	.GET();
+	// 发送请求并打印响应结果
+	print(await request.doRequest());
+}
 ```

@@ -1,25 +1,28 @@
+import 'dart:io';
 import 'dart:isolate';
 import 'package:happypass/happypass.dart';
 
-class _Receiver {
-	_Receiver(this.executor, this.port);
 
-	final RequestExecutor executor;
+class _Receiver<T, Q> {
+	_Receiver(this.message, this.callback, this.port);
+	final T message;
+	final AsyncRunProxyCallback<T, Q> callback;
 	final SendPort port;
+	
+	Future<Q> execute() async {
+		return await callback(message);
+	}
 }
 
-Future<ResultPassResponse> _proxy(RequestExecutor executor) async {
-	// 创建 Isolate
-	final receiverPort = ReceivePort();
-	final isolate = await Isolate.spawn(_doProxy, _Receiver(executor, receiverPort.sendPort));
-	final result = await receiverPort.first;
-	isolate.kill();
-	return result;
-}
 
 void _doProxy(_Receiver receiver) async {
-	final result = await receiver.executor.execute();
-	receiver.port.send(result);
+	try {
+		final result = await receiver.execute();
+		receiver.port.send(result);
+	}
+	catch(e) {
+		receiver.port.send(ErrorPassResponse());
+	}
 }
 
 void main() async {
@@ -28,7 +31,17 @@ void main() async {
 	// 设置 Request 路径
 	request.setUrl("https://www.baidu.com/")
 	// 设置 Request 运行环境，放置到 Isolate 中执行
-	.setRequestRunProxy(_proxy)
+	.setRequestRunProxy(<T, Q>(asyncCallback, message) async {
+		final receiverPort = ReceivePort();
+		final isolate = await Isolate.spawn(_doProxy, _Receiver(message, asyncCallback, receiverPort.sendPort));
+		final result = await receiverPort.first;
+		receiverPort.close();
+		isolate.kill();
+		if(result is ErrorPassResponse) {
+			throw IOException;
+		}
+		return result;
+	})
 	// 设置解码器
 	.addLastDecoder(const Byte2Utf8StringDecoder())
 	// 设置拦截器
