@@ -1,11 +1,11 @@
 ## 开始使用
 
-当前最新版本为: 1.0.0
+当前最新版本为: 1.0.1
 
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^1.0.0
+  happypass: ^1.0.1
 ```
 
 github
