@@ -84,6 +84,35 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 		}
 		return _returnObj;
 	}
+
+	/// 增加新的路径
+	ReturnType addPath(String path) {
+		if (_buildRequest.checkExecutingStatus) {
+			_buildRequest._url += path;
+		}
+		return _returnObj;
+	}
+
+	/// 追加 Url 参数
+	/// * checkFirstParams 是否检查第一参数，如果该值是当前 url 的第一参数，则会在首部追加 '?' 而不是 '&'
+	/// * useEncode 是否对 Value 进行 encode
+	ReturnType appendParams(String key, String value, {bool checkFirstParams = true, bool useEncode = true}) {
+		if (_buildRequest.checkExecutingStatus) {
+			if(key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
+				final realValue = useEncode ? Uri.encodeComponent("value") : value;
+
+				if(checkFirstParams && !_buildRequest._hasUrlParams) {
+					_buildRequest._url += "?";
+				}
+				else {
+					_buildRequest._url += "&";
+				}
+				_buildRequest._url += "$key=$realValue";
+				_buildRequest._hasUrlParams = true;
+			}
+		}
+		return _returnObj;
+	}
 }
 
 /// 请求方法配置混合

@@ -68,6 +68,11 @@ class Request extends _BaseRequest {
     /// 存放请求头 Map
     Map<String, String> _headerMap;
 
+
+    /// 判断是否已经存在 Url 参数
+    /// 这个标志取决于拼接 Url 地址时是否追加 `?`
+    bool _hasUrlParams = false;
+
     /// 存放请求地址 Url
     String _url;
 
