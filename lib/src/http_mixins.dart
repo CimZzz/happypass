@@ -1,5 +1,6 @@
 part of 'http.dart';
 
+
 mixin _RequestOperatorMixBase {
 	/// 所构建的请求
 	Request get _buildRequest;
@@ -9,7 +10,6 @@ mixin _RequestMixinBase<ReturnType> implements _RequestOperatorMixBase {
 	/// 代理对象
 	ReturnType get _returnObj;
 }
-
 
 /*配置 Mixin 混合*/
 
@@ -26,7 +26,6 @@ mixin _RequestRunProxySetBuilder<ReturnType> implements _RequestMixinBase<Return
 		return _returnObj;
 	}
 }
-
 
 /// 请求拦截器配置混合
 /// 用于配置 Request 拦截器
@@ -68,7 +67,19 @@ mixin _RequestHeaderBuilder<ReturnType> implements _RequestMixinBase<ReturnType>
 	}
 
 	/// 设置请求头部
+	/// 通过该方法设置的所有请求头中，`key` 值均会以小写形式存储
 	ReturnType setRequestHeader(String key, String value) {
+		if(key == null)
+			return _returnObj;
+		if (_buildRequest.checkExecutingStatus) _header[key.toLowerCase()] = value;
+		return _returnObj;
+	}
+
+	/// 设置自定义请求头部
+	/// 通过该方法设置的所有请求头，保留原有 `Key` 值的大小写
+	ReturnType setCustomRequestHeader(String key, String value) {
+		if(key == null)
+			return _returnObj;
 		if (_buildRequest.checkExecutingStatus) _header[key] = value;
 		return _returnObj;
 	}
@@ -98,13 +109,12 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// * useEncode 是否对 Value 进行 encode
 	ReturnType appendParams(String key, String value, {bool checkFirstParams = true, bool useEncode = true}) {
 		if (_buildRequest.checkExecutingStatus) {
-			if(key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
+			if (key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
 				final realValue = useEncode ? Uri.encodeComponent("value") : value;
 
-				if(checkFirstParams && !_buildRequest._hasUrlParams) {
+				if (checkFirstParams && !_buildRequest._hasUrlParams) {
 					_buildRequest._url += "?";
-				}
-				else {
+				} else {
 					_buildRequest._url += "&";
 				}
 				_buildRequest._url += "$key=$realValue";
@@ -164,7 +174,6 @@ mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 	}
 }
 
-
 /// 请求解码器配置混合
 /// 用于配置 Request Decoders
 mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
@@ -212,10 +221,10 @@ mixin _RequestProxyRunner implements _RequestOperatorMixBase {
 	/// 注意的是，回调必须为 `static`
 	Future<Q> proxy<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
 		final runProxy = _buildRequest._runProxy;
-		if(runProxy != null) {
+		if (runProxy != null) {
 			return await runProxy(callback, message);
 		}
-		
+
 		return callback(message);
 	}
 }
@@ -240,12 +249,17 @@ mixin _RequestUrlGetter implements _RequestOperatorMixBase {
 /// 用于获取 Request 的请求 Url
 mixin _RequestHeaderGetter implements _RequestOperatorMixBase {
 	/// 获取请求头部
-	String getRequestHeader(String key) => _buildRequest?._headerMap[key];
-	
+	/// 该方法会将 `Key` 值转化为小写形式
+	String getRequestHeader(String key) => key != null ? _buildRequest?._headerMap[key.toLowerCase()] : null;
+
+	/// 获取请求头部
+	/// 该方法保留 `Key` 值的大小写形式
+	String getCustomRequestHeader(String key) => key != null ? _buildRequest?._headerMap[key] : null;
+
 	/// 遍历请求头
 	void forEachRequestHeaders(void callback(String key, String value)) {
 		if (_buildRequest._headerMap != null) {
-			_buildRequest._headerMap.forEach(callback);
+			_buildRequest._headerMap.forEach((String key, String value) => callback(key, value));
 		}
 	}
 }
@@ -263,27 +277,22 @@ mixin _RequestBodyGetter implements _RequestOperatorMixBase {
 /// 用于填充 Request Headers
 mixin _RequestHeaderFiller implements _RequestOperatorMixBase {
 	/// 将配置好的请求头部填充到 HttpClientRequest 中
-	void fillRequestHeader(
-		HttpClientRequest httpReq,
-		ChainRequestModifier modifier,
-		{ bool useProxy = true }
-	) async {
+	void fillRequestHeader(HttpClientRequest httpReq, ChainRequestModifier modifier, {bool useProxy = true}) async {
 		final headers = modifier._request._headerMap;
-		if(headers != null && headers.isNotEmpty) {
+		if (headers != null && headers.isNotEmpty) {
 			final bundle = _HeaderBundle(httpReq, headers);
-			if(useProxy) {
+			if (useProxy) {
 				await modifier.proxy(_fillHeaders, bundle);
-			}
-			else {
+			} else {
 				await _fillHeaders(bundle);
 			}
 		}
 	}
-	
+
 	static Future _fillHeaders(_HeaderBundle bundle) async {
 		final httpReq = bundle._request;
 		final headers = bundle._requestHeaders;
-		if(headers != null && headers.isNotEmpty) {
+		if (headers != null && headers.isNotEmpty) {
 			headers.forEach((key, value) {
 				httpReq.headers.add(key, value);
 			});
@@ -294,11 +303,10 @@ mixin _RequestHeaderFiller implements _RequestOperatorMixBase {
 /// 用于包装需要填充的请求和请求头的数据集
 class _HeaderBundle {
 	_HeaderBundle(this._request, this._requestHeaders);
-	
+
 	final HttpClientRequest _request;
 	final Map<String, String> _requestHeaders;
 }
-
 
 /// 填充 Request 请求Body
 /// 用于填充 Request Body，可选择进行代理和编码
@@ -307,42 +315,78 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
 	/// 结果返回
 	/// 可以选择是否使用代理，编码
-	/// 默认情况下，开始编码与代理
-	Future<PassResponse> fillRequestBody(
-		HttpClientRequest httpReq,
-		ChainRequestModifier modifier,
-		{ bool useEncode = true, bool useProxy = true }
-	) async {
+	/// 默认情况下，使用编码与代理
+	Future<PassResponse> fillRequestBody(HttpClientRequest httpReq, ChainRequestModifier modifier, {bool useEncode = true, bool useProxy = true}) async {
 		// 目前只有 POST 方法会发送请求体
-		if(_buildRequest._requestMethod != RequestMethod.POST) {
+		if (_buildRequest._requestMethod != RequestMethod.POST) {
 			return null;
 		}
 		dynamic body = _buildRequest._body;
 		// POST 方法的 body 不能为 null
-		if(body == null) {
+		if (body == null) {
 			return ErrorPassResponse(msg: "[POST] \"body\" 不能为 \"null\"");
 		}
 
-		dynamic message = body;
-		if(useEncode) {
-			final encoders = _buildRequest._encoderList;
-			// 存在编码器，进行编码
-			if(encoders != null) {
-				final bundle = _EncodeBundle(message, _buildRequest._encoderList);
-				if (useProxy) {
-					message = await modifier.proxy(_encodeMessage, bundle);
-				}
-				else {
-					message = await _encodeMessage(bundle);
+		if(body is RequestBody) {
+			// 当请求体是 RequestBody 时
+			RequestBody requestBody = body;
+			String contentType = requestBody.contentType;
+			if(contentType != null) {
+				bool overrideContentType = requestBody.overrideContentType;
+				if(overrideContentType == true || httpReq.headers.value("content-type") == null) {
+					httpReq.headers.set("content-type", contentType);
 				}
 			}
+
+			await for(var message in body.provideBodyData()) {
+				if (useEncode) {
+					final encoders = _buildRequest._encoderList;
+					// 存在编码器，进行编码
+					if (encoders != null) {
+						final bundle = _EncodeBundle(message, _buildRequest._encoderList);
+						if (useProxy) {
+							message = await modifier.proxy(_encodeMessage, bundle);
+						} else {
+							message = await _encodeMessage(bundle);
+						}
+					}
+				}
+
+				if (message is! List<int>) {
+					return ErrorPassResponse(msg: "[POST] 最后的编码结果类型不为 \"List<int>\"");
+				}
+
+				httpReq.add(message);
+
+				message = await body.provideBodyData();
+			}
+
+		}
+		else {
+			// 当请求体不是 RequestBody 时
+			dynamic message = body;
+			if (useEncode) {
+				final encoders = _buildRequest._encoderList;
+				// 存在编码器，进行编码
+				if (encoders != null) {
+					final bundle = _EncodeBundle(message, _buildRequest._encoderList);
+					if (useProxy) {
+						message = await modifier.proxy(_encodeMessage, bundle);
+					} else {
+						message = await _encodeMessage(bundle);
+					}
+				}
+			}
+
+			if (message is! List<int>) {
+				return ErrorPassResponse(msg: "[POST] 最后的编码结果类型不为 \"List<int>\"");
+			}
+
+			httpReq.add(message);
 		}
 
-		if(message is! List<int>) {
-			return ErrorPassResponse(msg: "[POST] 最后的编码结果类型不为 \"List<int>\"");
-		}
 
-		httpReq.add(message);
+
 
 		return null;
 	}
@@ -350,7 +394,7 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 	/// 实际 encode 消息方法
 	static Future<List<int>> _encodeMessage(_EncodeBundle bundle) async {
 		var message = bundle._message;
-		
+
 		int count = bundle._encoderList.length;
 		for (int i = 0; i < count; i++) {
 			final encoder = bundle._encoderList[i];
@@ -360,18 +404,18 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 				message = oldMessage;
 			}
 		}
-		
+
 		return message;
 	}
 }
 
 /// 用于包装需要编码的消息和编码器的数据集
 class _EncodeBundle {
-    const _EncodeBundle(this._message, this._encoderList);
+	const _EncodeBundle(this._message, this._encoderList);
+
 	final dynamic _message;
 	final List<HttpMessageEncoder> _encoderList;
 }
-
 
 /// 解析 Request 的 Response Body
 /// 用于解析 Response Body，可选择进行代理和解码
@@ -382,49 +426,44 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
 	/// 结果返回
 	/// 可以选择是否使用代理，编码
 	/// 默认情况下，开始编码与代理
-	Future<PassResponse> analyzeResponse(
-		HttpClientRequest httpReq,
-		ChainRequestModifier modifier,
-		{ bool useDecode = true, bool useProxy = true }
-	) async {
+	Future<PassResponse> analyzeResponse(HttpClientRequest httpReq, ChainRequestModifier modifier, {bool useDecode = true, bool useProxy = true}) async {
 		HttpClientResponse httpResp = await httpReq.close();
 		List<int> responseBody = List();
 		await httpResp.forEach((byteList) {
 			responseBody.addAll(byteList);
 		});
-		
+
 		dynamic decodeObj = null;
-		if(useDecode) {
+		if (useDecode) {
 			final decoders = _buildRequest._decoderList;
 			// 存在编码器，进行编码
-			if(decoders != null) {
+			if (decoders != null) {
 				final bundle = _DecodeBundle(responseBody, _buildRequest._decoderList);
 				if (useProxy) {
 					decodeObj = await modifier.proxy(_decodeMessage, bundle);
-				}
-				else {
+				} else {
 					decodeObj = await _decodeMessage(bundle);
 				}
 			}
 		}
-		
+
 		return ProcessablePassResponse(httpResp, responseBody, decodeObj);
 	}
-	
+
 	/// 实际 decode 消息方法
 	static Future<dynamic> _decodeMessage(_DecodeBundle bundle) async {
 		dynamic decoderMessage = bundle._message;
 		List<HttpMessageDecoder> decoders = bundle._decoderList;
-		
+
 		int count = decoders.length;
-		for(int i = 0 ; i < count ; i ++) {
+		for (int i = 0; i < count; i++) {
 			final decoder = decoders[i];
 			decoderMessage = decoder.decode(decoderMessage);
-			if(decoderMessage == null) {
+			if (decoderMessage == null) {
 				break;
 			}
 		}
-		
+
 		return decoderMessage;
 	}
 }
@@ -432,16 +471,17 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
 /// 用于包装需要解码的消息和解码器的数据集
 class _DecodeBundle {
 	const _DecodeBundle(this._message, this._decoderList);
+
 	final dynamic _message;
 	final List<HttpMessageDecoder> _decoderList;
 }
 
-
-
 /*组合 Mixin 基类*/
 
 /// 请求基类
-abstract class _BaseRequest with _RequestMixinBase<Request>,
+abstract class _BaseRequest
+	with
+		_RequestMixinBase<Request>,
 		_RequestRunProxySetBuilder<Request>,
 		_RequestInterceptorBuilder<Request>,
 		_RequestInterceptorClearBuilder<Request>,
@@ -450,12 +490,11 @@ abstract class _BaseRequest with _RequestMixinBase<Request>,
 		_RequestMethodBuilder<Request>,
 		_RequestEncoderBuilder<Request>,
 		_RequestDecoderBuilder<Request>,
-		/* 操作混合 */
+	/* 操作混合 */
 		_RequestUrlGetter,
 		_RequestMethodGetter,
 		_RequestHeaderGetter,
-		_RequestBodyGetter
-{
+		_RequestBodyGetter {
 	@override
 	Request get _returnObj => this;
 
@@ -465,7 +504,9 @@ abstract class _BaseRequest with _RequestMixinBase<Request>,
 
 /// 请求原型基类
 /// 原型不能构造请求方法，防止因为持有大量请求体 (body) 而导致内存问题
-abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<RequestPrototype>,
+abstract class _BaseRequestPrototype<RequestPrototype>
+	with
+		_RequestMixinBase<RequestPrototype>,
 		_RequestRunProxySetBuilder<RequestPrototype>,
 		_RequestInterceptorBuilder<RequestPrototype>,
 		_RequestInterceptorClearBuilder<RequestPrototype>,
@@ -473,12 +514,10 @@ abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<Re
 		_RequestUrlBuilder<RequestPrototype>,
 		_RequestEncoderBuilder<RequestPrototype>,
 		_RequestDecoderBuilder<RequestPrototype>,
-		/* 操作混合 */
+	/* 操作混合 */
 		_RequestUrlGetter,
 		_RequestMethodGetter,
-		_RequestHeaderGetter
-{
-}
+		_RequestHeaderGetter {}
 
 /// 拦截链请求修改器
 /// 可以在拦截过程中对请求进行一些修改
@@ -488,13 +527,15 @@ abstract class _BaseRequestPrototype<RequestPrototype> with _RequestMixinBase<Re
 /// - 修改请求编码器
 /// - 修改请求解码器
 /// - 获取运行代理
-class ChainRequestModifier with _RequestMixinBase<ChainRequestModifier>,
+class ChainRequestModifier
+	with
+		_RequestMixinBase<ChainRequestModifier>,
 		_RequestHeaderBuilder<ChainRequestModifier>,
 		_RequestUrlBuilder<ChainRequestModifier>,
 		_RequestMethodBuilder<ChainRequestModifier>,
 		_RequestEncoderBuilder<ChainRequestModifier>,
 		_RequestDecoderBuilder<ChainRequestModifier>,
-		/* 操作混合 */
+	/* 操作混合 */
 		_RequestProxyRunner,
 		_RequestUrlGetter,
 		_RequestMethodGetter,
@@ -502,9 +543,9 @@ class ChainRequestModifier with _RequestMixinBase<ChainRequestModifier>,
 		_RequestBodyGetter,
 		_RequestHeaderFiller,
 		_RequestBodyFiller,
-		_ResponseBodyDecoder
-{
+		_ResponseBodyDecoder {
 	ChainRequestModifier(this._request);
+
 	final Request _request;
 
 	@override
@@ -513,3 +554,4 @@ class ChainRequestModifier with _RequestMixinBase<ChainRequestModifier>,
 	@override
 	Request get _buildRequest => _request;
 }
+

@@ -133,7 +133,7 @@ class PassInterceptorChain{
             else {
                 response = await chainRequestModifier.analyzeResponse(httpReq, modifier);
             }
-            
+            httpReq = null;
             if(response == null) {
                 return ErrorPassResponse(msg: "未能成功解析 Response");
             }
@@ -144,6 +144,13 @@ class PassInterceptorChain{
             return ErrorPassResponse(msg: "请求发生异常: $e", error: e);
         }
         finally {
+            if(httpReq != null) {
+                try {
+                    httpReq.close();
+                }
+                catch(e){}
+                httpReq = null;
+            }
             if(client != null) {
                 try {
                     client.close();
@@ -196,6 +203,4 @@ class BusinessPassInterceptor extends PassInterceptor {
     Future<PassResponse> intercept(PassInterceptorChain chain) async {
         return await chain.requestForPassResponse();
     }
-
-
 }
