@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:happypass/happypass.dart';
@@ -86,7 +87,7 @@ class MultiData {
 /// 表单请求数据体
 /// 对应使用的 Content-Type 为 "application/x-www-form-urlencoded"
 /// 用来传递表单格式键值对数据
-class MultiPartDataBody extends RequestBody {
+class MultipartDataBody extends RequestBody {
 
 	/// Multipart Boundary
 	final String _multipartBoundary = "----DartFormBoundary${_randomBoundary()}";
@@ -102,7 +103,7 @@ class MultiPartDataBody extends RequestBody {
 	List<MultiData> _multiDataList;
 
 	/// 直接添加 Multipart 数据
-	MultiPartDataBody addMultiPartData(MultiData data) {
+	MultipartDataBody addMultiPartData(MultiData data) {
 		if(data == null) {
 			return this;
 		}
@@ -113,17 +114,17 @@ class MultiPartDataBody extends RequestBody {
 	}
 
 	/// 添加文本 Multipart 数据
-	MultiPartDataBody addMultiPartText(String name, String text, { String fileName, String contentType}) {
+	MultipartDataBody addMultiPartText(String name, String text, { String fileName, String contentType}) {
 		return addMultiPartData(MultiData(name: name, data: text, fileName: fileName, contentType: _getDefaultContentType(fileName)));
 	}
 
 	/// 添加文件 Multipart 数据
-	MultiPartDataBody addMultipartFile(String name, File file, {String fileName, String contentType,}) {
+	MultipartDataBody addMultipartFile(String name, File file, {String fileName, String contentType,}) {
 		return addMultipartStream(name, file.openRead(), fileName: fileName ?? _getFileName(file), contentType: contentType);
 	}
 
 	/// 添加流 Multipart 数据
-	MultiPartDataBody addMultipartStream(String name, Stream<List<int>> stream, {String fileName, String contentType}) {
+	MultipartDataBody addMultipartStream(String name, Stream<List<int>> stream, {String fileName, String contentType}) {
 		return addMultiPartData(
 			MultiData(
 				name: name,
@@ -154,7 +155,7 @@ class MultiPartDataBody extends RequestBody {
 			}
 			contentHeader += "\r\n";
 
-			yield contentHeader;
+			yield RawBodyData(rawData: utf8.encode(contentHeader));
 			if(multiData.data is Stream) {
 				yield* multiData.data;
 			}
@@ -162,10 +163,10 @@ class MultiPartDataBody extends RequestBody {
 				yield multiData.data;
 			}
 
-			yield "\r\n";
+			yield RawBodyData(rawData: utf8.encode("\r\n"));
 		}
 
-		yield "\r\n--$_multipartBoundary--";
+		yield RawBodyData(rawData: utf8.encode("\r\n--$_multipartBoundary--"));
 	}
 
 

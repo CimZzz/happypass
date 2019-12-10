@@ -158,9 +158,20 @@ mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 
 	/// 添加编码器
 	/// 新添加的编码器会追加到首位
+	/// 建议最好使用 [addLastEncoder]，以免造成逻辑混乱
+	@deprecated
 	ReturnType addFirstEncoder(HttpMessageEncoder encoder) {
 		if (_buildRequest.checkExecutingStatus) {
 			_encoders.insert(0, encoder);
+		}
+		return _returnObj;
+	}
+
+	/// 添加编码器
+	/// 新添加的编码器会追加到末位
+	ReturnType addLastEncoder(HttpMessageEncoder encoder) {
+		if (_buildRequest.checkExecutingStatus) {
+			_encoders.add(encoder);
 		}
 		return _returnObj;
 	}
@@ -183,10 +194,22 @@ mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 	}
 
 	/// 添加解码器
+	/// 新添加的解码器会追加到首位
+	/// 建议最好使用 [addLastDecoder]，以免造成逻辑混乱
+	@deprecated
+	ReturnType addFirstDecoder(HttpMessageDecoder decoder) {
+		if (_buildRequest.checkExecutingStatus) {
+			_decoders.insert(0, decoder);
+		}
+		return _returnObj;
+	}
+
+	/// 添加解码器
 	/// 新添加的解码器会追加到末位
-	/// 这样时为了保证和编码器配置的顺序保持一致
 	ReturnType addLastDecoder(HttpMessageDecoder decoder) {
-		if (_buildRequest.checkExecutingStatus) _decoders.add(decoder);
+		if (_buildRequest.checkExecutingStatus) {
+			_decoders.add(decoder);
+		}
 		return _returnObj;
 	}
 
@@ -208,6 +231,39 @@ mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 				}
 			}
 		}
+	}
+}
+
+
+/// 请求加密配置快捷混合
+/// 可以帮助我们便捷的配置常用的编解码器
+mixin _RequestChannelBuilder<ReturnType> implements _RequestDecoderBuilder<ReturnType>, _RequestEncoderBuilder<ReturnType> {
+
+	/// 配置 `utf8` 字符串编解码器，形成字符串通道
+	/// 该方法会将之前全部编解码器清空
+	ReturnType stringChannel() {
+		if (_buildRequest.checkExecutingStatus) {
+			clearEncoder();
+			clearDecoder();
+			addLastEncoder(const Utf8String2ByteEncoder());
+			addLastDecoder(const Byte2Utf8StringDecoder());
+		}
+		return _returnObj;
+	}
+
+
+	/// 配置 `json` 编解码器，形成 json 通道
+	/// 该方法会将之前全部编解码器清空
+	ReturnType jsonChannel() {
+		if (_buildRequest.checkExecutingStatus) {
+			clearEncoder();
+			clearDecoder();
+			addLastEncoder(const Utf8String2ByteEncoder());
+			addLastEncoder(const JSON2Utf8StringEncoder());
+			addLastDecoder(const Byte2Utf8StringDecoder());
+			addLastDecoder(const Utf8String2JSONDecoder());
+		}
+		return _returnObj;
 	}
 }
 
@@ -339,7 +395,10 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 			}
 
 			await for(var message in body.provideBodyData()) {
-				if (useEncode) {
+				if(message is RawBodyData) {
+					message = message.rawData;
+				}
+				else if (useEncode) {
 					final encoders = _buildRequest._encoderList;
 					// 存在编码器，进行编码
 					if (encoders != null) {
@@ -490,6 +549,7 @@ abstract class _BaseRequest
 		_RequestMethodBuilder<Request>,
 		_RequestEncoderBuilder<Request>,
 		_RequestDecoderBuilder<Request>,
+		_RequestChannelBuilder<Request>,
 	/* 操作混合 */
 		_RequestUrlGetter,
 		_RequestMethodGetter,
@@ -514,6 +574,7 @@ abstract class _BaseRequestPrototype<RequestPrototype>
 		_RequestUrlBuilder<RequestPrototype>,
 		_RequestEncoderBuilder<RequestPrototype>,
 		_RequestDecoderBuilder<RequestPrototype>,
+		_RequestChannelBuilder<RequestPrototype>,
 	/* 操作混合 */
 		_RequestUrlGetter,
 		_RequestMethodGetter,
@@ -535,6 +596,7 @@ class ChainRequestModifier
 		_RequestMethodBuilder<ChainRequestModifier>,
 		_RequestEncoderBuilder<ChainRequestModifier>,
 		_RequestDecoderBuilder<ChainRequestModifier>,
+		_RequestChannelBuilder<ChainRequestModifier>,
 	/* 操作混合 */
 		_RequestProxyRunner,
 		_RequestUrlGetter,

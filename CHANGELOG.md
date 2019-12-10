@@ -21,3 +21,8 @@
     1. 使用 ``FormDataBody``，传递标准表单数据
     2. 使用 ``MultipartDataBody``，传递 `Multipart` 数据
 - 修复因异常请求阻塞问题
+
+## 1.0.4
+
+- `MultipartBodyData` 中每一部分的头部将不会被加密
+- 新增了两个便捷配置编解码器的方法

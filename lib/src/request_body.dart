@@ -1,5 +1,13 @@
 part of 'http.dart';
 
+
+/// 原始请求 Body 数据
+/// 该对象不会被编码器进行编码
+class RawBodyData {
+	const RawBodyData({this.rawData});
+	final List<int> rawData;
+}
+
 /// 请求体
 /// 用来包装请求数据，来支持多种样式数据的处理
 /// 注意该对象是一次性对象，不能持久化持有其引用

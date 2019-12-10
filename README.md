@@ -1,11 +1,11 @@
 ## 开始使用
 
-当前最新版本为: 1.0.2
+当前最新版本为: 1.0.4
 
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^1.0.2
+  happypass: ^1.0.4
 ```
 
 github
@@ -359,6 +359,56 @@ void main() async {
 	.addFirstInterceptor(const LogUrlInterceptor())
 	// GET 请求
 	.GET();
+	// 发送请求并打印响应结果
+	print(await request.doRequest());
+}
+```
+
+#### 表单数据 - FormDataBody
+
+[查看测试代码](example/example7.dart)
+
+我们可以使用 `FormDataBody` 很便捷地发送表单数据，
+如下面的例子:
+
+```dart
+void main() async {
+	// 通过 [Request.construct] 方法直接创建实例
+	Request request = Request.construct();
+	// 设置 Request 路径
+	request.setUrl("xxxxx")
+	// 设置 Request 运行环境，放置到 Isolate 中执行
+	.addFirstEncoder(const Utf8String2ByteEncoder())
+	// 设置解码器
+	.addLastDecoder(const Byte2Utf8StringDecoder())
+	// 设置拦截器
+	.POST(FormDataBody().addPair("hello", "world").addPair("happy", "everyday"));
+	// 发送请求并打印响应结果
+	print(await request.doRequest());
+}
+```
+
+使用 `FormDataBody`，把要传递的数据以 "键值对" 的方式发过去，就是那么简单。
+
+#### Multipart 数据 - MultipartDataBody
+
+[查看测试代码](example/example8.dart)
+
+如果我们想要上传某个或多个文件，或者一个数据流，可以使用 `MultipartDataBody` 来实现，例子如下:
+
+```dart
+void main() async {
+	File file = File("xxxx/temp.txt");
+	// 通过 [Request.construct] 方法直接创建实例
+	Request request = Request.construct();
+	// 设置 Request 路径
+	request.setUrl("xxx")
+	// 设置 Request 运行环境，放置到 Isolate 中执行
+	.addFirstEncoder(const Utf8String2ByteEncoder())
+	// 设置解码器
+	.addLastDecoder(const Byte2Utf8StringDecoder())
+	// 设置拦截器
+	.POST(MultipartDataBody().addMultipartFile("file", file));
 	// 发送请求并打印响应结果
 	print(await request.doRequest());
 }
