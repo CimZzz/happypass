@@ -85,7 +85,7 @@ class MultiData {
 }
 
 /// 表单请求数据体
-/// 对应使用的 Content-Type 为 "application/x-www-form-urlencoded"
+/// 对应使用的 Content-Type 为 "multipart/form-data"
 /// 用来传递表单格式键值对数据
 class MultipartDataBody extends RequestBody {
 
@@ -166,7 +166,7 @@ class MultipartDataBody extends RequestBody {
 			yield RawBodyData(rawData: utf8.encode("\r\n"));
 		}
 
-		yield RawBodyData(rawData: utf8.encode("\r\n--$_multipartBoundary--"));
+		yield RawBodyData(rawData: utf8.encode("--$_multipartBoundary--"));
 	}
 
 

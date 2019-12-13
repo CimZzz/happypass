@@ -24,5 +24,9 @@
 
 ## 1.0.4
 
-- `MultipartBodyData` 中每一部分的头部将不会被加密
+- `MultipartDataBody` 中每一部分的头部将不会被加密
 - 新增了两个便捷配置编解码器的方法
+
+## 1.0.5
+
+- 修复了 `MultipartDataBody` 最后一个字段多出 `\r\n` 的问题
