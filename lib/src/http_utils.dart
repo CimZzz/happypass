@@ -17,6 +17,9 @@ class HttpUtils {
 	/// 根据 Url 获取其组成信息
 	/// 返回 HttpUrl 来承载这些信息
 	static HttpUrl resolveUrl(String url) {
+		if(url == null) {
+			return null;
+		}
 		final httpRegex = RegExp("^(http|https)://([a-zA-Z\.]+)[:]?(\\d+)?[/]?(.*)");
 		final matcher = httpRegex.firstMatch(url);
 		if(matcher == null || matcher.groupCount != 4) {

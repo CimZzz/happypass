@@ -10,7 +10,7 @@ part of 'http.dart';
 /// 如果在特殊情况下，某个拦截器（假设 B）意图自己完成请求处理，那么整个流程如下:
 /// pass request : E -> D -> C -> B
 /// return response : B -> C -> D -> E
-/// 上述在 B 的位置直接拦截，请求并未传递到 BusinessPassInterceptor，所以 Request 的处理和 Response 的构建都应由 B 完成
+/// 上述在 B 的位置直接拦截，请求并未传递到 [BusinessPassInterceptor]，所以 Request 的处理和 Response 的构建都应由 B 完成
 ///
 /// 需要注意的是，如果拦截器只是对 Request 进行修改或者观察，并不想实际处理的话，请调用
 /// [PassInterceptorChain.waitResponse] 方法，表示将 Request 向下传递，然后将其结果返回表示将 Response 向上返回。
@@ -36,13 +36,13 @@ class PassInterceptorChain{
         this._requestCloser?._assembleModifier(this._chainRequestModifier);
         // 如果请求在执行前已经被中断，则直接返回中断的响应结果
         if(this._chainRequestModifier.isClosed) {
-            this._requestCloser?._finish();
+            this._requestCloser?._finish(_chainRequestModifier);
             final response = this._chainRequestModifier._finishResponse;
             this._chainRequestModifier._finish();
             return response;
         }
         final response = await this._chainRequestModifier._requestProxy(_waitResponse(0));
-        this._requestCloser?._finish();
+        this._requestCloser?._finish(_chainRequestModifier);
         this._chainRequestModifier._finish();
         // 没有生成 Response，表示拦截器将请求
         if(response == null) {
@@ -94,7 +94,7 @@ class PassInterceptorChain{
         /// HttpClientRequest 消息配置构造
         /// 用于配置请求头，发送请求 Body
         /// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
-        PassResponse httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
+        Future<PassResponse> httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
 
         /// Response Body 构造器
         /// 可以自行读取响应数据并对其修改，视为最终返回数据
@@ -130,7 +130,7 @@ class PassInterceptorChain{
             
             PassResponse resultResp;
             if(httpReqInfoBuilder != null) {
-                resultResp = httpReqInfoBuilder(httpReq, chainRequestModifier);
+                resultResp = await httpReqInfoBuilder(httpReq, chainRequestModifier);
             }
             else {
                 await chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier);

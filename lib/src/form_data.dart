@@ -6,6 +6,14 @@ import 'package:happypass/happypass.dart';
 /// 用来传递表单格式键值对数据
 class FormDataBody extends RequestBody {
 
+	/// 缺省的构造方法
+	FormDataBody();
+
+	/// 以键值对 Map 的形式创建 FormDataBody
+	FormDataBody.createByMap({Map<String, String> map}) {
+		addMap(map);
+	}
+
 	/// 强制覆盖请求中的 `ContentType`
 	@override
 	bool get overrideContentType => true;
@@ -27,6 +35,15 @@ class FormDataBody extends RequestBody {
 		_bodyMap ??= Map();
 		_bodyMap[Uri.encodeComponent(key)] = Uri.encodeComponent(value.toString());
 
+		return this;
+	}
+
+	/// 向 FormDataBody 中添加键值对 Map
+	/// 以键值对 Map 的类型添加数据
+	FormDataBody addMap(Map<String, String> map) {
+		if(map != null) {
+			map.forEach(addPair);
+		}
 		return this;
 	}
 

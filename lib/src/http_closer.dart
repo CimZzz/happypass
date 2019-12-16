@@ -4,12 +4,12 @@ part of 'http.dart';
 /// 请求中断器
 /// 用于外部中断请求
 class RequestCloser {
-	ChainRequestModifier _modifier;
+	Set<ChainRequestModifier> _modifierSet;
 	ResultPassResponse _closeResponse;
 	
-	/// 判断请求是否已经结束
+	/// 判断是否请求中断
 	bool _isClosed = false;
-	bool get isClosed => this._modifier?._isClosed ?? _isClosed;
+	bool get isClosed => _isClosed;
 	
 	/// 装配 [ChainRequestModifier]
 	void _assembleModifier(ChainRequestModifier modifier) {
@@ -17,7 +17,8 @@ class RequestCloser {
 			modifier._finishResponse = _closeResponse;
 		}
 		else {
-			this._modifier = modifier;
+			this._modifierSet ??= Set();
+			this._modifierSet.add(modifier);
 		}
 	}
 	
@@ -27,18 +28,16 @@ class RequestCloser {
 			return;
 		}
 		_isClosed = true;
-		if(this._modifier == null) {
-			_closeResponse = finishResponse;
-		}
-		else {
-			_modifier?.close(finishResponse: finishResponse);
+		_closeResponse = finishResponse;
+		if(this._modifierSet != null) {
+			this._modifierSet.forEach((modifier) {
+				modifier.close(finishResponse: finishResponse);
+			});
 		}
 	}
 	
 	/// 回收引用
-	void _finish() {
-		_isClosed = true;
-		_modifier = null;
-		_closeResponse = null;
+	void _finish(ChainRequestModifier modifier) {
+		this._modifierSet?.remove(modifier);
 	}
 }

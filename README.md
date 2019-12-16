@@ -59,7 +59,9 @@ request.setRequestHeader("content-type", "application/json");
 
 > 需要注意的是，Request 无法直接实例化。如果想要构建一个全新的 `Request` 对象，请使用 `Request.construct()` 方法
 
-### RequestPrototype
+想了解 `happypass` 当前版本全部的配置，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example2.dart)
+
+### RequestPrototype - 请求原型
 
 RequestPrototype(请求原型)，也可以理解为请求的`模板`。利用请求原型预先配置好某些属性，然后在使用的时候快速生成一个配置好的请求，这样做的好处是避免重复配置请求参数，防止不必要的代码冗余。
 
@@ -67,401 +69,148 @@ RequestPrototype(请求原型)，也可以理解为请求的`模板`。利用请
 ```dart
 import 'package:happypass/happypass.dart';
 void main() async {
-    Request
+    RequestPrototype prototype = RequestPrototype();
 }
 ```
 
-
+像请求一样，我们可以为其配置一个基于 utf8 字符串的编解码器
 
 ```dart
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
+prototype.stringChannel();
 ```
 
-然后配置 ``Request``
+量化生成并执行请求
 
 ```dart
-// 设置 Request 路径
-request.setUrl("https://www.baidu.com/")
-// 设置 Request 头部
-.setRequestHeader("Hello", "World")
-// 设置解码器（将响应数据转换为 UTF8 字符串）
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 添加拦截器
-.addFirstInterceptor(const LogUrlInterceptor())
-// GET 请求
-.GET();
-```
-
-上述配置了 Request 路径、头部、解码器、拦截器和请求方法。
-
-然后发送请求获得结果
-
-```dart
-// 发送请求并打印响应结果
-print(await request.doRequest());
-```
-
-以上完成了一次简单的 `GET` 请求。
-
-### 编码器
-
-[查看测试代码](example/example2.dart)
-
-在 `POST` 请求中，最终发送的请求数据是 `List<int>` 类型，而编码器的作用就是将 `body` 中的数据进行转换，最终转化为 `List<int>` 类型数据。
-
-如下:
-```dart
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
-// 设置 Request 路径
-request.setUrl("http://xxxxxx")
-// 设置请求方法为 POST
-// body 是一个 Map，所以需要配置编码器将 Map 转化为 List<int> 数据
-// 假设服务端需要的数据时 JSON 字符串
-.POST({
-	"data": "helloworld"
-})
-// 首先将 Map 转化为 JSON 字符串
-.addFirstEncoder(const JSON2Utf8StringEncoder())
-// 然后将 String 转化为 List<int>
-.addFirstEncoder(const Utf8String2ByteEncoder())
-// 将响应数据 List<int> 转化为 String
-.addLastDecoder(const Byte2Utf8StringDecoder());
-// 发送请求并打印响应结果
-print(await request.doRequest());
-```
-
-这样，编码器先通过 `JSON2Utf8StringEncoder` 将 ``Map`` 转换为 `JSON` 字符串，再通过 `Utf8String2ByteEncoder` 将 `JSON` 字符串转换为 `List<int>` 字节数组。
-
-目前只有 ``POST`` 请求会用到编码器。
-
-### 解码器
-
-[查看测试代码](example/example3.dart)
-
-在请求之后，接收到的响应数据是 `List<int>` 类型，我们可以通过配置解码器的方式将其转换为我们所需要的类型。
-
-使用编码器实例中的部分代码，针对解码器部分进行修改
-
-```dart
-
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
-// 设置 Request 路径
-request.setUrl("http://xxxxxx")
-...
-// 将响应数据 List<int> 转化为 String
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 然后 String 转化为 Map
-.addLastDecoder(const Utf8String2JSONDecoder());
-// 发送请求并打印响应结果
-print(await request.doRequest());
-```
-
-解码器先通过 `Byte2Utf8StringDecoder` 将 `List<int>` 转换为 `JSON` 字符串，在通过 `Utf8String2ByteEncoder` 将 `JSON` 字符串转换为 `Map`
-
-### 拦截器
-
-[查看测试代码](example/example4.dart)
-
-拦截器负责处理 `Request` 和生成 `Response`。默认情况下，每个请求都会携带一个缺省的拦截器 `BusinessPassInterceptor`，该拦截器主要的目的就是将请求
-转化为对应的 `Response`
-
-首先声明两个拦截器:
-```dart
-class SimpleIntercept1 extends PassInterceptor {
-	const SimpleIntercept1(this.name);
-
-	final String name;
-
-	@override
-	Future<PassResponse> intercept(PassInterceptorChain chain) {
-		print(name);
-		return chain.waitResponse();
-	}
-}
-
-class SimpleIntercept2 extends PassInterceptor {
-	const SimpleIntercept2(this.name);
-
-	final String name;
-
-	@override
-	Future<PassResponse> intercept(PassInterceptorChain chain) {
-		print(name);
-		return chain.requestForPassResponse();
-	}
+// 快速孵化请求，量化执行
+for(int i = 0 ; i < 10 ; i ++) {
+    print(await prototype.spawn().GET().doRequest());
 }
 ```
 
-可以给请求配置拦截器观察一下执行流程:
+从上面小例子可以大致地了解请求原型的作用 ———— `模板`。
+
+了解更多 `RequestPrototype` 配置，点击查看 [点击查看](https://github.com/CimZzz/happypass/blob/master/example/example4.dart)
+
+### 快速请求方法
+
+可能在某些情况下，我们想要简化代码复杂度，优化可读性，可以使用 `happypass` 提供的快速请求方法:
+
+- quickGet: 快速 `GET` 请求
+- quickPost: 快速 `POST` 请求
+
+这两个方法都可以设置请求原型的方式来孵化请求
+
 ```dart
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
-// 设置 Request 路径
-request.setUrl("https://www.baidu.com/")
-// 设置 Request 头部
-.setRequestHeader("Hello", "World")
-// 设置解码器
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 添加拦截器
-.addFirstInterceptor(const SimpleIntercept1("Chain A"))
-.addFirstInterceptor(const SimpleIntercept1("Chain B"))
-.addFirstInterceptor(const SimpleIntercept1("Chain C"))
-.addFirstInterceptor(const SimpleIntercept1("Chain D"))
-.addFirstInterceptor(const SimpleIntercept1("Chain E"))
-// GET 请求
-.GET();
-// 发送请求并打印响应结果
-print(await request.doRequest());
+Request.quickGet(
+    url: "xxx",
+    prototype: prototype,
+);
+
+Request.quickPost(
+    url: "xxx",
+    body: xxx,
+    prototype: prototype,
+);
 ```
 
-执行结果如下:
-```text
-chain E
-chain D
-chain C
-chain B
-chain A
-...
-// real response data
-```
+关于这两个方法更为细致地介绍，请参考样例，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example5.dart)
 
-拦截器采取的方式是首位插入，所以最先添加的拦截器最后执行
+#### HTTP 拦截器
+
+拦截器是整个 `happypass` 的核心，每个请求缺省都会带有一个 `BusinessPassInterceptor` 拦截器。该拦截器的作用就是执行实际的请求逻辑。
+
+拦截器的工作原理可以简单描述为一条请求链路，最终的目的是获取响应结果。
+
+> 这里指的响应结果为 `ResultPassResponse` 的子类。该类是 `happypass` 定义的响应结果类
+> 该类有两个子类，分别表示请求的成功与失败:
+> - ErrorPassResponse: 表示请求失败
+> - SuccessPassResponse: 表示请求成功
 
 正常情况下，拦截器的工作应该如下
+> pass request : E -> D -> C -> B -> A -> BusinessPassInterceptor
+> return response : BusinessPassInterceptor -> A -> B -> C -> D -> E
 
-pass request : E -> D -> C -> B -> A -> BusinessPassInterceptor
-
-return response : BusinessPassInterceptor -> A -> B -> C -> D -> E
-
-上述完成了一次拦截工作，Request 的处理和 Response 的构建都在 BusinessPassInterceptor 这个拦截器中完成
-
+上述完成了一次拦截工作，`Request` 的处理和 `Response` 的构建都在 `BusinessPassInterceptor` 这个拦截器中完成
 如果在特殊情况下，某个拦截器（假设 B）意图自己完成请求处理，那么整个流程如下:
 
-pass request : E -> D -> C -> B
+> pass request : E -> D -> C -> B
+> return response : B -> C -> D -> E
 
-return response : B -> C -> D -> E
-
-上述在 B 的位置直接拦截，请求并未传递到 BusinessPassInterceptor，所以 Request 的处理和 Response 的构建都应由 B 完成
-
-这次我们在 B 点进行拦截
+上述在 B 的位置直接拦截，请求并未传递到 `BusinessPassInterceptor`，所以 Request 的处理和 `Response` 的构建都应由 B 完成
+需要注意的是，如果拦截器只是对 `Request` 进行修改或者观察，并不想实际处理的话，请调用
+`PassInterceptorChain.waitResponse` 方法，表示将 `Request` 向下传递，然后将其结果返回表示将 `Response` 向上返回。
+ 
+我们也可以添加拦截器在请求链路上做一些自定义行为，比如拦截来自某个域名的请求
 
 ```dart
-// 通过 [Request.construct] 方法直接创建实例
-Request request = Request.construct();
+// 为了方便演示，我们采用 [SimplePassInterceptor] 类，只需传递回调闭包即可实现拦截的功能
+final interceptor = SimplePassInterceptor((chain) async {
+	final httpUrl = HttpUtils.resolveUrl(chain.modifier.getUrl());
+	if(httpUrl != null && httpUrl.host == "www.baidu.com") {
+		return ErrorPassResponse(msg: "block www.baidu.com request");
+	}
 
-// 设置 Request 路径
-request.setUrl("https://www.baidu.com/")
-// 设置解码器
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 添加拦截器
-.addFirstInterceptor(const SimpleIntercept1("Chain A"))
-.addFirstInterceptor(const SimpleIntercept2("Chain B"))
-.addFirstInterceptor(const SimpleIntercept1("Chain C"))
-.addFirstInterceptor(const SimpleIntercept1("Chain D"))
-.addFirstInterceptor(const SimpleIntercept1("Chain E"))
-// GET 请求
-.GET();
-
-// 发送请求并打印响应结果
-print(await request.doRequest());
+	return chain.waitResponse();
+});
 ```
 
-执行结果如下
+上面例子完成了 `block` 全部来自 `www.baidu.com` 域名下的请求。当然，不要忘了将它添加到你的请求配置中，否则这一切都白做了！
+
+```dart
+Request.get(url: "https://www.baidu.com", configCallback: (request) {
+    request.addFirstInterceptor(interceptor);
+})
+```
+
+该请求最终的响应结果打印出来为:
+
 ```text
-chain E
-chain D
-chain C
-chain B
-...
-// real response data
+block www.baidu.com request
 ```
 
-拦截器回调参数中的 `PassInterceptorChain` 提供了一些便捷的方法:
-```dart
-class PassInterceptorChain {
+相信这个小例子已经让大家对拦截器有了一个初步的了解
 
-    ...
+更多拦截器的使用方法与详细探究，请参考实例，[点击查看](https://github.com/CimZzz/happypass/blob/master/example)
 
-    /// 等待其他拦截器返回 `Response`
-    Future<PassResponse> waitResponse() async
-    
-    /// 获取拦截链请求修改器
-    /// 可以在拦截器中修改请求的大部分参数，直到有 `PassResponse` 返回
-    ChainRequestModifier get modifier;
-    
-    /// 实际执行 `Request` 获得 `Response`
-    /// 提供了一些可选回调，最大限度满足自定义 Request 的自由
-    Future<PassResponse> requestForPassResponse async ({
-        /// HttpClient 构造器
-        /// 可以自定义 HttpClient 的构造方式
-        HttpClient httpClientBuilder(),
-        /// HttpClientRequest 构造器
-        /// 可以自定义 HttpClientRequest 的构造方式
-        Future<HttpClientRequest> httpReqBuilder(HttpClient client, ChainRequestModifier modifier),
-        /// HttpClientRequest 消息配置构造
-        /// 用于配置请求头，发送请求 Body
-        /// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
-        PassResponse httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
-        /// HttpClientResponse 构造器
-        /// 可以自定义 HttpClientResponse 的构造方式
-        Future<HttpClientResponse> httpRespBuilder(HttpClientRequest httpReq),
-        /// Response Body 构造器
-        /// 可以自行读取响应数据并对其修改，视为最终返回数据
-        Future<PassResponse> responseBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier)
-    });
+#### 请求 Body、编码器、解码器
 
-    ...
-}
-```
+`happypass` 中，一次完整请求数据流程大致如下:
 
-具体的细节逻辑可以参考[源代码](lib/src/http_interceptors.dart)
+1. 请求 Body 经过编码器编码为 `List<int>` 的 `byte` 数据（`GET` 请求会跳过该步骤）
+2. 将 `byte` 数据发送，获得响应的 `byte` 数据
+3. 将响应的 `byte` 经过解码器解码为指定的数据结构返回
 
-### 请求原型
+想必编码器与解码器并不陌生，`happypass` 也提供了一些默认的编解码器。
 
-[查看测试代码](example/example5.dart)
+`happypass` 提供的编码器有:
+- GZip2ByteEncoder: GZIP 编码器。转换模式为: List<int> -> List<int>（byte 转 byte）
+- Utf8String2ByteEncoder: utf8 字符串编码器。转换模式为: String -> List<int>（字符串转 `utf8` 格式的 byte 数据）
+- JSON2Utf8StringEncoder: JSON 编码器。转换模式为: Map -> String（Map 转字符串）
 
-避免大量不必要的请求配置操作，可以使用请求原型来实现快速构建配置相同的请求
+`happypass` 提供的解码器有:
+- Byte2GZipDecoder: GZIP 解码器。转换模式为: List<int> -> List<int>（byte 转 byte）
+- Byte2Utf8StringDecoder: utf8 字符串解码器。转换模式为: List<int> -> String（`utf8` 格式的 byte 数据转字符串）
+- Utf8String2JSONDecoder: JSON 解码器。转换模式为: String -> Map（字符串转 Map）
 
-```dart
-// 通过 [Request.construct] 方法直接创建实例
-RequestPrototype requestPrototype = RequestPrototype();
+如果以上编码器或者解码器不能满足你的需要，可以定义一个继承自 `HttpMessageEncoder` 或 `HttpMessageDecoder` 继承实现自定义的编解码器。
 
-// 设置 Request 路径
-requestPrototype.setUrl("https://www.baidu.com/")
-// 设置 Request 头部
-.setRequestHeader("Hello", "World")
-// 设置解码器
-.addLastDecoder(const Byte2Utf8StringDecoder())
-// 添加拦截器
-.addFirstInterceptor(const LogUrlInterceptor());
-// 不允许原型配置请求方法
-//.GET();
+在需要发送流数据的请求中（比如 `POST` 请求），必须传递一个 `body` 作为请求 body:
 
-// 由原型孵化出 Request
-final request1 = requestPrototype.spawn();
-final request2 = requestPrototype.spawn();
-final request3 = requestPrototype.spawn();
-// 异步执行所有请求
-request1.GET().doRequest();
-request2.GET().doRequest();
-request3.GET().doRequest();
-// 发送请求并打印响应结果
-print("request1 : ${await request1.doRequest()}");
-print("request2 : ${await request2.doRequest()}");
-print("request3 : ${await request3.doRequest()}");
-```
+> body 参数有两种选择:
+> 1. 某种类型数据。该类型数据会经过编码器层层编码，最终转换为 `List<int>` 类型的 byte 数据（如果通过编码器转换的最终数据不为 `List<int>`，则会抛出异常中断请求）
+> 2. `RequestBody` 子类
 
-需要注意的是，为了避免 `RequestPrototype` 持有大量 `body` 而导致的内存问题，所以禁止 `Prototype` 配置请求方法。
+**`RequestBody` 子类会按照一定的规则提供请求数据，具体可以参考相关示例。**
 
-#### 请求运行环境代理
+下面列举一下 `happypass` 提供的 RequestBody
+- FormDataBody: 表单键值对请求数据，如 "key1=value1&key2=value2" 这种标准表单结构
+- MultipartDataBody: Multipart 表单请求数据，可以传递文件与流数据
+- StreamDataBody: 流数据请求数据，直接读取流中数据作为请求数据
 
-[查看测试代码](example/example6.dart)
-
-`Request` 默认会在当前 `Isolate` 下执行请求，而一些比如 `Flutter` 主 `Isolate` 通常会做一些 `UI` 渲染相关工作，大量的请求很可能会
-导致其 `UI` 卡顿。因此，我们可以配置 `Request` 运行环境代理，将请求某些操作（如对请求 `Body` 进行编码）放到其他 `Isolate` 中执行，以此达到优化的目的
-
-比如我们配置一个 Isolate 请求代理
-
-```dart
-class _Receiver<T, Q> {
-	_Receiver(this.message, this.callback, this.port);
-	final T message;
-	final AsyncRunProxyCallback<T, Q> callback;
-	final SendPort port;
-	
-	Future<Q> execute() async {
-		return await callback(message);
-	}
-}
+**如果以上请求体数据不能满足你的需求，那么去定义一个继承自 `RequestBody` 的类作为属于你自己的自定义 `RequestBody` 吧！**
 
 
-void _doProxy(_Receiver receiver) async {
-	try {
-		final result = await receiver.execute();
-		receiver.port.send(result);
-	}
-	catch(e) {
-		receiver.port.send(ErrorPassResponse());
-	}
-}
+#### 请求中断
 
-void main() async {
-	// 通过 [Request.construct] 方法直接创建实例
-	Request request = Request.construct();
-	// 设置 Request 路径
-	request.setUrl("https://www.baidu.com/")
-	// 设置 Request 运行环境，放置到 Isolate 中执行
-	.setRequestRunProxy(<T, Q>(asyncCallback, message) async {
-		final receiverPort = ReceivePort();
-		final isolate = await Isolate.spawn(_doProxy, _Receiver(message, asyncCallback, receiverPort.sendPort));
-		final result = await receiverPort.first;
-		receiverPort.close();
-		isolate.kill();
-		if(result is ErrorPassResponse) {
-			throw IOException;
-		}
-		return result;
-	})
-	// 设置解码器
-	.addLastDecoder(const Byte2Utf8StringDecoder())
-	// 设置拦截器
-	.addFirstInterceptor(const LogUrlInterceptor())
-	// GET 请求
-	.GET();
-	// 发送请求并打印响应结果
-	print(await request.doRequest());
-}
-```
-
-#### 表单数据 - FormDataBody
-
-[查看测试代码](example/example7.dart)
-
-我们可以使用 `FormDataBody` 很便捷地发送表单数据，
-如下面的例子:
-
-```dart
-void main() async {
-	// 通过 [Request.construct] 方法直接创建实例
-	Request request = Request.construct();
-	// 设置 Request 路径
-	request.setUrl("xxxxx")
-	// 设置 Request 运行环境，放置到 Isolate 中执行
-	.addFirstEncoder(const Utf8String2ByteEncoder())
-	// 设置解码器
-	.addLastDecoder(const Byte2Utf8StringDecoder())
-	// 设置拦截器
-	.POST(FormDataBody().addPair("hello", "world").addPair("happy", "everyday"));
-	// 发送请求并打印响应结果
-	print(await request.doRequest());
-}
-```
-
-使用 `FormDataBody`，把要传递的数据以 "键值对" 的方式发过去，就是那么简单。
-
-#### Multipart 数据 - MultipartDataBody
-
-[查看测试代码](example/example8.dart)
-
-如果我们想要上传某个或多个文件，或者一个数据流，可以使用 `MultipartDataBody` 来实现，例子如下:
-
-```dart
-void main() async {
-	File file = File("xxxx/temp.txt");
-	// 通过 [Request.construct] 方法直接创建实例
-	Request request = Request.construct();
-	// 设置 Request 路径
-	request.setUrl("xxx")
-	// 设置 Request 运行环境，放置到 Isolate 中执行
-	.addFirstEncoder(const Utf8String2ByteEncoder())
-	// 设置解码器
-	.addLastDecoder(const Byte2Utf8StringDecoder())
-	// 设置拦截器
-	.POST(MultipartDataBody().addMultipartFile("file", file));
-	// 发送请求并打印响应结果
-	print(await request.doRequest());
-}
-```
+`happypass` 支持开发者随时随地中断请求

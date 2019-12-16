@@ -7,20 +7,9 @@ abstract class HttpMessageDecoder {
     dynamic decode(dynamic message);
 }
 
-/// GZip
-class GZip2ByteEncoder extends HttpMessageEncoder {
-    const GZip2ByteEncoder();
-    
-    @override
-    dynamic encode(dynamic message) {
-        if(message is List<int>) {
-            return gzip.encode(message);
-        }
-        return message;
-    }
-}
 
 
+/// GZip 解码器
 class Byte2GZipDecoder extends HttpMessageDecoder {
     const Byte2GZipDecoder();
     
@@ -34,7 +23,7 @@ class Byte2GZipDecoder extends HttpMessageDecoder {
     
 }
 
-/// Byte - Utf8 字符串编码器
+/// Byte - Utf8 字符串解码器
 class Byte2Utf8StringDecoder extends HttpMessageDecoder {
     const Byte2Utf8StringDecoder({this.isAllowMalformed});
     

@@ -133,7 +133,7 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 追加 Url 参数
 	/// * checkFirstParams 是否检查第一参数，如果该值是当前 url 的第一参数，则会在首部追加 '?' 而不是 '&'
 	/// * useEncode 是否对 Value 进行 encode
-	ReturnType appendParams(String key, String value, {bool checkFirstParams = true, bool useEncode = true}) {
+	ReturnType appendQueryParams(String key, String value, {bool checkFirstParams = true, bool useEncode = true}) {
 		if (_buildRequest.checkExecutingStatus) {
 			if (key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
 				final realValue = useEncode ? Uri.encodeComponent("value") : value;
@@ -145,6 +145,20 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 				}
 				_buildRequest._url += "$key=$realValue";
 				_buildRequest._hasUrlParams = true;
+			}
+		}
+		return _returnObj;
+	}
+
+	/// 以 Map 的形式追加 Url 参数
+	/// * checkFirstParams 是否检查第一参数，如果该值是当前 url 的第一参数，则会在首部追加 '?' 而不是 '&'
+	/// * useEncode 是否对 Value 进行 encode
+	ReturnType appendQueryParamsByMap(Map<String, String> map, {bool checkFirstParams = true, bool useEncode = true}) {
+		if(_buildRequest.checkExecutingStatus) {
+			if(map != null) {
+				map.forEach((key, value) {
+					appendQueryParams(key, value, checkFirstParams: checkFirstParams, useEncode: useEncode);
+				});
 			}
 		}
 		return _returnObj;
@@ -386,6 +400,9 @@ mixin _RequestMethodGetter implements _RequestOperatorMixBase {
 mixin _RequestUrlGetter implements _RequestOperatorMixBase {
 	/// 获取请求地址
 	String getUrl() => _buildRequest._url;
+
+	/// 获取 Url 转换过的 HttpUrl 对象
+	HttpUrl getHttpUrl() => HttpUtils.resolveUrl(_buildRequest._url);
 }
 
 /// 获取请求 Url 配置混合

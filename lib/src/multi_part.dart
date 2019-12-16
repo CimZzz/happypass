@@ -36,6 +36,7 @@ String _getFileName(File file) {
 	return fileName;
 }
 
+/// 获取缺省的 `ContentType`
 String _getDefaultContentType(String fileName) {
 	if(fileName == null) {
 		return null;
@@ -72,7 +73,7 @@ String _getDefaultContentType(String fileName) {
 	}
 }
 
-
+/// Multipart 每一个子数据
 class MultiData {
 	MultiData({this.name, this.data, this.fileName, this.contentType}):
 		assert(name != null),
@@ -84,7 +85,7 @@ class MultiData {
 	final String contentType;
 }
 
-/// 表单请求数据体
+/// Multipart 请求数据体
 /// 对应使用的 Content-Type 为 "multipart/form-data"
 /// 用来传递表单格式键值对数据
 class MultipartDataBody extends RequestBody {
