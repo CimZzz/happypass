@@ -1,25 +1,77 @@
-## 开始使用
+## happypass
 
-当前最新版本为: 1.0.5
+happy pass,pass happy to everybody!
+
+`happypass` 是一个高度自由化、可定制的 http 请求库，如果你喜欢掌控自己的代码，那么一定会爱上它！
+
+本项目是开源项目，如果大家有好的想法和意见，可以告知我或者一起参与其中，共同维护我们的开源环境。
+
+### 快速集成
+
+当前最新版本为: 1.0.6
 
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^1.0.5
+  happypass: ^1.0.6
 ```
 
-github
+[github](https://github.com/CimZzz/happypass)
+
 ```text
 https://github.com/CimZzz/happypass
 ```
 
+### 最详细的示例
+
+`happypass` 字面意思就是想要 `pass happy to everybody`，对于提高工程师使用体验更是视为重中之重。所以在 `happypass` 中，有着大量详细示例以供参考，帮助我们工程师
+能够快速上手使用。
+
+[示例目录](https://github.com/CimZzz/happypass/blob/master/example)
+
 ### 构建一个请求 (Request)
 
-[查看测试代码](example/example1.dart)
+`happypass` 将请求对象抽象为 `Request` 类，借由配置 `Request` 来实现自定义请求的目的。
 
-``HappyPass`` 将请求对象抽象为 `Request` 类，借由配置 `Request` 来实现自定义请求的目的。
+下面是一个极简的示例:
+```dart
+import 'package:happypass/happypass.dart';
+void main() async {
+	PassResultResponse result = await Request.quickGet(url: "https://www.baidu.com/", configCallback: (request) {
+		request.stringChannel();
+	});
 
-为了发送请求，首先我们需要构建 ``Request`` 类
+	print(result);
+}
+```
+
+仅仅几行代码，你就完成了一次 `GET` 请求！
+
+当然，这是最基本的一小部分功能，还有非常多的强大功能帮助你实现主宰自己的 `http` 请求。
+
+如果想要全面了解 `happypass` 功能覆盖，还请查看[详细示例](https://github.com/CimZzz/happypass/blob/master/example)
+
+对于上面的示例，我们可以做一些扩展配置，如设置请求头部等:
+
+```dart
+request.setRequestHeader("content-type", "application/json");
+```
+
+> 需要注意的是，Request 无法直接实例化。如果想要构建一个全新的 `Request` 对象，请使用 `Request.construct()` 方法
+
+### RequestPrototype
+
+RequestPrototype(请求原型)，也可以理解为请求的`模板`。利用请求原型预先配置好某些属性，然后在使用的时候快速生成一个配置好的请求，这样做的好处是避免重复配置请求参数，防止不必要的代码冗余。
+
+实例化一个请求原型
+```dart
+import 'package:happypass/happypass.dart';
+void main() async {
+    Request
+}
+```
+
+
 
 ```dart
 // 通过 [Request.construct] 方法直接创建实例

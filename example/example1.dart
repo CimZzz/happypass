@@ -1,20 +1,16 @@
 import 'package:happypass/happypass.dart';
 
+/// 下面实例展示了如何利用 `happypass`，快速的执行一次 `GET` 请求
 void main() async {
-	// 通过 [Request.construct] 方法直接创建实例
-	Request request = Request.construct();
-
-	// 设置 Request 路径
-	request.setUrl("https://www.baidu.com/")
-	// 设置 Request 头部
-	.setRequestHeader("Hello", "World")
-	// 设置解码器
-	.addLastDecoder(const Byte2Utf8StringDecoder())
-	// 添加拦截器
-	.addFirstInterceptor(const  LogUrlInterceptor())
-	// GET 请求
-	.GET();
-
-	// 发送请求并打印响应结果
-	print(await request.doRequest());
+	// 使用 [Request.quickGet] 方法执行请求
+	final result = await Request.quickGet(url: "https://www.baidu.com/", configCallback: (request) {
+		// 这一步的作用是快捷配置字符串编解码器
+		// 如果不进行配置，收的将会是 `byte` 数据
+		request.stringChannel();
+	});
+	
+	// 返回结果是 [ResultPassResponse] 的子类，分别是 [ErrorPassResponse] 和 [SuccessPassResponse]
+	// 对应着请求结果的成功与失败
+	print("result type: ${result.runtimeType}");
+	print(result.toString());
 }

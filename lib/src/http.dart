@@ -8,6 +8,9 @@ part 'http_decoders.dart';
 part 'http_encoders.dart';
 part 'http_responses.dart';
 part 'request_body.dart';
+part 'http_closer.dart';
+part 'http_cookie_manager.dart';
+part 'http_utils.dart';
 
 /// 请求状态
 /// 1. Prepare 准备状态，在这个阶段中对请求进行一些配置
@@ -31,12 +34,21 @@ enum RequestMethod {
 typedef AsyncRunProxyCallback<T, Q> = Future<Q> Function(T);
 /// 请求执行代理接口
 typedef AsyncRunProxy = Future Function<T, Q>(AsyncRunProxyCallback<T, Q>, T);
+/// 接收响应报文进度回调接口
+typedef HttpResponseDataUpdateCallback = void Function(int length, int totalLength);
+/// 接收响应报文原始数据接口
+typedef HttpResponseRawDataReceiverCallback = Future<dynamic> Function(Stream<List<int>> rawData);
+
+/// 快速请求处理回调
+typedef RequestConfigCallback = void Function(Request request);
 
 /// 请求对象
 /// 对该对象进行配置，然后执行获取请求结果
 /// `Request` 不能直接创建，代替的是通过以下方法实例化:
 /// 1. [Request.construct]
 /// 2. [RequestPrototype.spawn]
+/// 如果发送的请求不需要太多配置信息，可以使用 [Request.quickGet] / [Request.quickPost]
+/// 方法来发送 `GET / `POST` 请求
 class Request extends _BaseRequest {
     Request._();
 
@@ -44,7 +56,7 @@ class Request extends _BaseRequest {
     static Request construct() {
         return Request._();
     }
-
+    
     /// 表示当前请求状态
     _RequestStatus _status = _RequestStatus.Prepare;
 
@@ -89,7 +101,20 @@ class Request extends _BaseRequest {
 
     /// 数据解码器
     List<HttpMessageDecoder> _decoderList;
+    
+    /// 进度更新回调
+    List<HttpResponseDataUpdateCallback> _responseDataUpdateList;
+    
+    /// 接收原始数据回调
+    HttpResponseRawDataReceiverCallback _responseReceiverCallback;
+    
+    /// 请求中断器
+    RequestCloser _requestCloser;
 
+    /// Cookie 管理器
+    /// 该对象在克隆时，将会传递引用而不是实例化一个新的对象
+    CookieManager _cookieManager;
+    
     /// 执行请求
     /// 只有在 [_RequestStatus.Prepare] 状态下才会实际发出请求
     /// 其余条件下均返回第一次执行时的 Future
@@ -103,7 +128,7 @@ class Request extends _BaseRequest {
         _requestCompleter.complete(_execute());
         return _requestCompleter.future;
     }
-
+    
     /// 实际执行请求逻辑
     /// 借助 [PassInterceptorChain] 完成请求
     /// 缺省情况下，由 [BusinessPassInterceptor] 拦截器完成请求处理逻辑
@@ -115,7 +140,6 @@ class Request extends _BaseRequest {
         catch(e) {
             return ErrorPassResponse(msg: "拦截发生异常: $e", error: e);
         }
-
     }
 
     /// 创建克隆的请求对象
@@ -138,8 +162,67 @@ class Request extends _BaseRequest {
         if(this._decoderList != null) {
             cloneObj._decoderList = List.from(this._decoderList);
         }
+        cloneObj._cookieManager = this._cookieManager;
         
         return cloneObj;
+    }
+
+    /// 快速进行一次 GET 请求
+    /// - url: 请求的地址
+    /// - path: 请求的部分路径
+    /// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
+    /// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
+    /// * [url] 和 [path] 两者不能同时为 `null`
+    static Future<ResultPassResponse> quickGet({
+        String url,
+        String path,
+        RequestPrototype prototype,
+        RequestConfigCallback configCallback,
+    }) {
+        assert(url != null || path != null);
+        final request = prototype?.spawn() ?? Request.construct();
+        if(url != null) {
+            request.setUrl(url);
+        }
+        if(path != null) {
+            request.addPath(path);
+        }
+        request.GET();
+        if(configCallback != null) {
+            configCallback(request);
+        }
+        return request.doRequest();
+    }
+
+    /// 快速进行一次 POST 请求
+    /// - url: 请求的地址
+    /// - path: 请求的部分路径
+    /// - body: 请求体，表示 POST 传递的请求数据
+    /// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
+    /// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
+    /// * [url] 和 [path] 两者不能同时为 `null`
+    /// * [body] 不能为 `null`
+    static Future<ResultPassResponse> quickPost({
+        String url,
+        String path,
+        dynamic body,
+        RequestPrototype prototype,
+        RequestConfigCallback configCallback,
+    }) {
+        assert(url != null || path != null);
+        assert(body != null);
+        final request = prototype?.spawn() ?? Request.construct();
+        if(url != null) {
+            request.setUrl(url);
+        }
+        if(path != null) {
+            request.addPath(path);
+        }
+        request.POST(body);
+        if(configCallback != null) {
+            configCallback(request);
+        }
+        return request.doRequest();
     }
 }
 

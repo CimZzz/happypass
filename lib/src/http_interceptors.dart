@@ -22,16 +22,28 @@ class PassInterceptorChain{
     PassInterceptorChain._(this._request):
             this._chainRequestModifier = ChainRequestModifier(_request),
             this._interceptors = _request._passInterceptorList,
-            this._totalInterceptorCount = _request._passInterceptorList.length ?? 0;
+            this._totalInterceptorCount = _request._passInterceptorList.length ?? 0,
+            this._requestCloser = _request._requestCloser;
 
     final Request _request;
     final ChainRequestModifier _chainRequestModifier;
+    final RequestCloser _requestCloser;
     final List<PassInterceptor> _interceptors;
     final int _totalInterceptorCount;
     int _currentIdx = -1;
 
     Future<ResultPassResponse> _intercept() async {
-        final response = await _waitResponse(0);
+        this._requestCloser?._assembleModifier(this._chainRequestModifier);
+        // 如果请求在执行前已经被中断，则直接返回中断的响应结果
+        if(this._chainRequestModifier.isClosed) {
+            this._requestCloser?._finish();
+            final response = this._chainRequestModifier._finishResponse;
+            this._chainRequestModifier._finish();
+            return response;
+        }
+        final response = await this._chainRequestModifier._requestProxy(_waitResponse(0));
+        this._requestCloser?._finish();
+        this._chainRequestModifier._finish();
         // 没有生成 Response，表示拦截器将请求
         if(response == null) {
             return ErrorPassResponse(msg: "未能生成 Response");
@@ -42,12 +54,12 @@ class PassInterceptorChain{
         }
 
         if(response is ProcessablePassResponse) {
-            return SuccessPassResponse(response.body ?? response.bodyData);
+            return SuccessPassResponse(body: response.body ?? response.bodyData);
         }
 
         return ErrorPassResponse(msg: "无法识别该 Response");
     }
-
+    
     Future<PassResponse> _waitResponse(int idx) async {
         if(idx >= _totalInterceptorCount || this._currentIdx >= idx) {
             return null;
@@ -55,10 +67,6 @@ class PassInterceptorChain{
         this._currentIdx = idx;
         final currentInterceptor = _interceptors[idx];
         PassResponse response = await currentInterceptor.intercept(this);
-        if(response != null) {
-            _request._status = _RequestStatus.Executed;
-        }
-
         return response;
     }
 
@@ -96,6 +104,7 @@ class PassInterceptorChain{
         HttpClientRequest httpReq;
         try {
             client = httpClientBuilder != null ? httpClientBuilder() : HttpClient();
+            modifier.assembleHttpClient(client);
             final chainRequestModifier = this.modifier;
             final method = chainRequestModifier.getRequestMethod();
 
@@ -112,7 +121,13 @@ class PassInterceptorChain{
                     httpReq = await client.getUrl(Uri.parse(url));
                 }
             }
-
+            
+            // 填充 Cookie
+            final existCookie = chainRequestModifier.getCookies(chainRequestModifier.getUrl());
+            if(existCookie != null) {
+                httpReq.cookies.addAll(existCookie);
+            }
+            
             PassResponse resultResp;
             if(httpReqInfoBuilder != null) {
                 resultResp = httpReqInfoBuilder(httpReq, chainRequestModifier);
@@ -131,7 +146,16 @@ class PassInterceptorChain{
                 response = await responseBuilder(httpReq, modifier);
             }
             else {
-                response = await chainRequestModifier.analyzeResponse(httpReq, modifier);
+                if(chainRequestModifier.existResponseRawDataReceiverCallback()) {
+                    // 如果存在响应数据原始接收回调
+                    // 执行 [analyzeResponseByReceiver] 方法
+                    response = await chainRequestModifier.analyzeResponseByReceiver(httpReq, modifier);
+                }
+                else {
+                    // 执行 [analyzeResponse] 方法
+                    response = await chainRequestModifier.analyzeResponse(httpReq, modifier);
+                }
+                
             }
             httpReq = null;
             if(response == null) {
@@ -153,7 +177,7 @@ class PassInterceptorChain{
             }
             if(client != null) {
                 try {
-                    client.close();
+                    client.close(force: true);
                 }
                 catch(e){}
                 client = null;
@@ -204,3 +228,5 @@ class BusinessPassInterceptor extends PassInterceptor {
         return await chain.requestForPassResponse();
     }
 }
+
+///
