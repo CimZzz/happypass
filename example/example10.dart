@@ -7,6 +7,7 @@ import 'package:happypass/happypass.dart';
 /// 下载文件保存至本地
 void main() async {
 	final request = Request.construct();
+//	request.addHttpProxy("localhost", 1087);
 	final file = File("/Users/cimzzz/Desktop/1.txt");
 	await request.setUrl("https://xiazai.qishus.com/txt/%E5%89%91%E7%8E%8B%E6%9C%9D.txt")
 		.GET()

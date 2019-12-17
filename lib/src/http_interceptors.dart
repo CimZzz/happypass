@@ -103,6 +103,8 @@ class PassInterceptorChain{
         try {
             client = httpClientBuilder != null ? httpClientBuilder() : HttpClient();
             modifier.assembleHttpClient(client);
+            // 配置 HTTP 请求代理
+            modifier.fillRequestHttpProxy(client);
             final chainRequestModifier = this.modifier;
             final method = chainRequestModifier.getRequestMethod();
 

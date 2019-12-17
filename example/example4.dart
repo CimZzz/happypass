@@ -5,7 +5,11 @@ import 'package:happypass/happypass.dart';
 /// 但请求原型目前可以配置的信息几乎可以应对全部泛化配置，
 void main() async {
 	RequestPrototype prototype = RequestPrototype();
-
+	
+	// 设置请求 Id
+	// 请求 id 针对特定请求，无法进行泛化设置
+	// prototype.setRequestId("request1");
+	
 	// 设置 Request Url
 	prototype.setUrl("http://www.helloworld.com");
 	// 添加请求地址路径
@@ -135,7 +139,10 @@ void main() async {
 	// 请求原型不能设置响应数据接收进度回调
 	// 通常设置了该回调的请求为了满足某些特殊的需求，不应该应用到每个请求
 	// prototype.addResponseDataUpdate(null);
-
+	
+	// 添加请求 Http 代理
+	prototype.addHttpProxy("localhost", 8888);
+	
 	// 请求原型不能设置请求方法
 	// 因为 `POST` 方法会使用请求 Body 作为参数传递，而这个 Body 对于每个请求都是特定地，并且
 	// 如果为原型设置了这个 body，意味着该数据将会被全局持有不能回收，不利于内存的优化

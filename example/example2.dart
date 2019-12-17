@@ -5,6 +5,11 @@ import 'package:happypass/happypass.dart';
 void main() async {
 	// 通过 [Request.construct] 方法直接创建实例
 	Request request = Request.construct();
+	
+	// 设置请求 Id
+	// 为当前请求添加唯一标识符，以便于在特殊情况下区分请求
+	request.setRequestId("request1");
+	
 	// 设置 Request Url
 	request.setUrl("http://www.helloworld.com");
 	// 添加请求地址路径
@@ -148,7 +153,10 @@ void main() async {
 	// 每当从接收到响应原始数据的时候，都会触发该回调来通知当前已经接收的数据总数
 	// 如果开发者需要知晓响应数据接收进度（如通过接收进度来更新进度条等），可以设置该回调来实现这个功能
 	request.addResponseDataUpdate(null);
-
+	
+	// 添加请求 Http 代理
+	request.addHttpProxy("localhost", 8888);
+	
 	// 设置当前请求方法为 `GET`
 	request.GET();
 

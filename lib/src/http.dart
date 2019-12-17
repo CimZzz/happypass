@@ -11,6 +11,7 @@ part 'request_body.dart';
 part 'http_closer.dart';
 part 'http_cookie_manager.dart';
 part 'http_utils.dart';
+part 'http_proxy.dart';
 
 /// 请求状态
 /// 1. Prepare 准备状态，在这个阶段中对请求进行一些配置
@@ -38,7 +39,6 @@ typedef AsyncRunProxy = Future Function<T, Q>(AsyncRunProxyCallback<T, Q>, T);
 typedef HttpResponseDataUpdateCallback = void Function(int length, int totalLength);
 /// 接收响应报文原始数据接口
 typedef HttpResponseRawDataReceiverCallback = Future<dynamic> Function(Stream<List<int>> rawData);
-
 /// 快速请求处理回调
 typedef RequestConfigCallback = void Function(Request request);
 
@@ -68,9 +68,13 @@ class Request extends _BaseRequest {
     /// 这里的执行中并不是真正执行，该状态表示 Request 已经交由拦截链处理，并未真正生成 Response
     /// 在这个状态下可以修改大部分配置
     bool get checkExecutingStatus => _status.index <= _RequestStatus.Executing.index;
-
+    
     /// 请求完成 Future
     Completer<ResultPassResponse> _requestCompleter;
+    
+    /// 请求 id
+    /// 通常情况下为 null，但是为了满足特定需求需要知晓某个请求的信息，可以为请求设置 id 来进行区分
+    dynamic _reqId;
 
     /// 执行代理接口回调
     /// 请求中部分操作比较耗时，可以设置该代理来实现真实异步执行（比如借助 Isolate）
@@ -114,6 +118,9 @@ class Request extends _BaseRequest {
     /// Cookie 管理器
     /// 该对象在克隆时，将会传递引用而不是实例化一个新的对象
     CookieManager _cookieManager;
+    
+    /// 请求 Http 代理
+    List<PassHttpProxy> _httpProxyList;
     
     /// 执行请求
     /// 只有在 [_RequestStatus.Prepare] 状态下才会实际发出请求
@@ -164,6 +171,10 @@ class Request extends _BaseRequest {
         }
         cloneObj._cookieManager = this._cookieManager;
         
+        if(this._httpProxyList != null) {
+            cloneObj._httpProxyList = List.from(this._httpProxyList);
+        }
+        
         return cloneObj;
     }
 
@@ -172,14 +183,14 @@ class Request extends _BaseRequest {
     /// - path: 请求的部分路径
     /// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
     /// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
-    /// * [url] 和 [path] 两者不能同时为 `null`
+    /// * [url]、[path]、[prototype] 三者不能同时为 `null`
     static Future<ResultPassResponse> quickGet({
         String url,
         String path,
         RequestPrototype prototype,
         RequestConfigCallback configCallback,
     }) {
-        assert(url != null || path != null);
+        assert(url != null || path != null || prototype != null);
         final request = prototype?.spawn() ?? Request.construct();
         if(url != null) {
             request.setUrl(url);
@@ -200,7 +211,7 @@ class Request extends _BaseRequest {
     /// - body: 请求体，表示 POST 传递的请求数据
     /// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
     /// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
-    /// * [url] 和 [path] 两者不能同时为 `null`
+    /// * [url]、[path]、[prototype] 三者不能同时为 `null`
     /// * [body] 不能为 `null`
     static Future<ResultPassResponse> quickPost({
         String url,
@@ -209,7 +220,7 @@ class Request extends _BaseRequest {
         RequestPrototype prototype,
         RequestConfigCallback configCallback,
     }) {
-        assert(url != null || path != null);
+        assert(url != null || path != null || prototype != null);
         assert(body != null);
         final request = prototype?.spawn() ?? Request.construct();
         if(url != null) {

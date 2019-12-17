@@ -6,6 +6,7 @@ mixin _RequestOperatorMixBase {
 	Request get _buildRequest;
 }
 
+
 mixin _RequestMixinBase<ReturnType> implements _RequestOperatorMixBase {
 	/// 代理对象
 	ReturnType get _returnObj;
@@ -13,9 +14,25 @@ mixin _RequestMixinBase<ReturnType> implements _RequestOperatorMixBase {
 
 /*配置 Mixin 混合*/
 
+/// 请求 id 配置混合
+/// 用于配置 Request id
+mixin _RequestIdBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	/// 设置请求 id 方法
+	/// 为当前请求设置 id
+	/// * 请求 id 可以在任何时候设置
+	/// * 需要注意的是，id 一经设置，不可更改
+	ReturnType setRequestId(dynamic reqId) {
+		if(_buildRequest._reqId == null) {
+			_buildRequest._reqId = reqId;
+		}
+		
+		return _returnObj;
+	}
+}
+
 /// 请求运行代理配置混合
 /// 用于配置 Request 运行代理
-mixin _RequestRunProxySetBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+mixin _RequestRunProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置执行请求的代理方法
 	/// 应在代理接口中直接调用参数中的回调，不做其他任何操作
 	ReturnType setRequestRunProxy(AsyncRunProxy proxy) {
@@ -382,7 +399,7 @@ mixin _RequestCloserBuilder<ReturnType> implements _RequestMixinBase<ReturnType>
 	}
 }
 
-/// 请求 Cookie Manager 配置
+/// 请求 Cookie Manager 配置混合
 /// 用来配置 Cookie Manager
 mixin _RequestCookieManagerBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	
@@ -395,7 +412,62 @@ mixin _RequestCookieManagerBuilder<ReturnType> implements _RequestMixinBase<Retu
 	}
 }
 
+/// 请求 Http 代理配置混合
+/// 用来配置请求 Http 代理
+mixin _RequestHttpProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	List<PassHttpProxy> get _httpProxies {
+		return this._buildRequest?._httpProxyList ??= List();
+	}
+	
+	/// 添加请求 Http 代理
+	ReturnType addHttpProxy(String host, int port) {
+		if(_buildRequest.checkExecutingStatus) {
+			final proxy = PassHttpProxy(host, port);
+			if(!_httpProxies.contains(proxy)) {
+				_httpProxies.add(proxy);
+			}
+		}
+		
+		return _returnObj;
+	}
+	
+	/// 移除指定的请求 Http 代理
+	ReturnType removeHttpProxy(String host, int port) {
+		if(_buildRequest.checkExecutingStatus && _buildRequest._httpProxyList != null) {
+			final proxy = PassHttpProxy(host, port);
+			_httpProxies.remove(proxy);
+			if(_httpProxies.isEmpty) {
+				_buildRequest._httpProxyList = null;
+			}
+		}
+		
+		return _returnObj;
+	}
+	
+	/// 移除全部相同 host 的请求 Http 代理
+	ReturnType removeHttpProxyByHost(String host) {
+		if(_buildRequest.checkExecutingStatus && _buildRequest._httpProxyList != null) {
+			_httpProxies.removeWhere((proxy) {
+				proxy.host == host;
+			});
+			if(_httpProxies.isEmpty) {
+				_buildRequest._httpProxyList = null;
+			}
+		}
+		
+		return _returnObj;
+	}
+}
+
 /*操作 Mixin 混合*/
+
+/// 获取请求 id 配置混合
+mixin _RequestIdGetter implements _RequestOperatorMixBase {
+	/// 获取当前请求设置的 id 信息
+	dynamic getReqId() {
+		return _buildRequest._reqId;
+	}
+}
 
 /// 调用请求执行代理
 /// 通过请求执行代理来执行回调
@@ -911,17 +983,26 @@ mixin _RequestClose implements _RequestOperatorMixBase {
 	void close({ResultPassResponse finishResponse = const ErrorPassResponse(msg: "request interrupted!")}) {
 		this._client?.close(force: true);
 		this._innerCompleter?.complete(finishResponse);
+		// 因为 `Completer` 完成不是立即生效的，如果在同一时间内多个中断器同时中断请求
+		// 会导致多次完成 `Completer` 而引起异常，所以需要在第一次执行中断逻辑后立即回收
+		// `Completer` 相关的资源，防止该异常的发生
+		_reset();
+	}
+	
+	/// 回收当前执行请求逻辑的 Completer 相关的资源与引用
+	void _reset() {
+		_innerSubscription?.cancel();
+		_innerSubscription = null;
+		_innerCompleter = null;
+		_realBusinessCompleter = null;
+		_client = null;
 	}
 	
 	/// 清理当前所持有的引用和状态
 	void _finish() {
 		_isClosed = true;
 		_finishResponse = null;
-		_innerSubscription?.cancel();
-		_innerSubscription = null;
-		_innerCompleter = null;
-		_realBusinessCompleter = null;
-		_client = null;
+		_reset();
 	}
 }
 
@@ -958,13 +1039,62 @@ mixin _ResponseCookieManager implements _RequestOperatorMixBase {
 	}
 }
 
+/// 获取请求 Http 代理配置混合
+mixin _RequestProxyGetter implements _RequestOperatorMixBase {
+	
+	/// 获取指定 Host 下全部的请求 Http 代理
+	List<PassHttpProxy> getPassHttpProxiesByHost(String host) {
+		List<PassHttpProxy> list = null;
+		if(_buildRequest._httpProxyList != null) {
+			_buildRequest._httpProxyList.forEach((proxy) {
+				if(proxy.host == host) {
+					list.add(proxy);
+				}
+			});
+		}
+		
+		return list;
+	}
+	
+	/// 获取全部请求 Http 代理
+	List<PassHttpProxy> getPassHttpProxies() {
+		return List.from(_buildRequest._httpProxyList);
+	}
+	
+	/// 遍历请求 Http 代理
+	void forEachPassHttpProxies(void callback(PassHttpProxy)) {
+		if(_buildRequest._httpProxyList != null) {
+			_buildRequest._httpProxyList.forEach(callback);
+		}
+	}
+}
+
+
+/// 填充 Request 请求 Http 代理混合
+/// 用于填充 Request 请求 Http 代理混合
+mixin _RequestHttpProxyFiller implements _RequestOperatorMixBase {
+	
+	/// 为 Http Client 填充请求代理
+	void fillRequestHttpProxy(HttpClient client) {
+		if(_buildRequest._httpProxyList != null) {
+			String proxyStr = "DIRECT";
+			_buildRequest._httpProxyList.forEach((proxy) {
+				proxyStr = "PROXY ${proxy.host}:${proxy.port}; " + proxyStr;
+			});
+			client.findProxy = (url) {
+				return proxyStr;
+			};
+		}
+	}
+}
+
 /*组合 Mixin 基类*/
 
 /// 请求基类
 abstract class _BaseRequest
 	with
 		_RequestMixinBase<Request>,
-		_RequestRunProxySetBuilder<Request>,
+		_RequestRunProxyBuilder<Request>,
 		_RequestInterceptorBuilder<Request>,
 		_RequestInterceptorClearBuilder<Request>,
 		_RequestHeaderBuilder<Request>,
@@ -977,11 +1107,15 @@ abstract class _BaseRequest
 		_RequestResponseDataReceiverBuilder<Request>,
 		_RequestCloserBuilder<Request>,
 		_RequestCookieManagerBuilder<Request>,
+		_RequestIdBuilder<Request>,
+		_RequestHttpProxyBuilder<Request>,
 /* 操作混合 */
+		_RequestIdGetter,
 		_RequestUrlGetter,
 		_RequestMethodGetter,
 		_RequestHeaderGetter,
-		_RequestBodyGetter {
+		_RequestBodyGetter,
+		_RequestProxyGetter {
 	@override
 	Request get _returnObj => this;
 
@@ -992,10 +1126,11 @@ abstract class _BaseRequest
 /// 请求原型基类(原型基类应为 `static` 类型供全局共享)
 /// 原型不能构造请求方法，防止因为持有大量请求体 (body) 而导致内存问题
 /// 原型不能构造请求数据更新进度接口，防止持有大量引用导致内存问题
+/// 原型无法设置请求 id 和获取请求 id，因为请求 id 只针对某个请求，不能泛化
 abstract class _BaseRequestPrototype<RequestPrototype>
 	with
 		_RequestMixinBase<RequestPrototype>,
-		_RequestRunProxySetBuilder<RequestPrototype>,
+		_RequestRunProxyBuilder<RequestPrototype>,
 		_RequestInterceptorBuilder<RequestPrototype>,
 		_RequestInterceptorClearBuilder<RequestPrototype>,
 		_RequestHeaderBuilder<RequestPrototype>,
@@ -1004,10 +1139,12 @@ abstract class _BaseRequestPrototype<RequestPrototype>
 		_RequestDecoderBuilder<RequestPrototype>,
 		_RequestChannelBuilder<RequestPrototype>,
 		_RequestCookieManagerBuilder<RequestPrototype>,
+		_RequestHttpProxyBuilder<RequestPrototype>,
 	/* 操作混合 */
 		_RequestUrlGetter,
 		_RequestMethodGetter,
-		_RequestHeaderGetter {}
+		_RequestHeaderGetter,
+		_RequestProxyGetter {}
 
 /// 拦截链请求修改器
 /// 可以在拦截过程中对请求进行一些修改
@@ -1021,6 +1158,7 @@ abstract class _BaseRequestPrototype<RequestPrototype>
 /// - 标记请求已经执行
 /// - 配置请求中断器
 /// - 配置 Cookie Manager
+/// - 修改 HTTP 请求代理
 class ChainRequestModifier
 	with
 		_RequestMixinBase<ChainRequestModifier>,
@@ -1034,7 +1172,10 @@ class ChainRequestModifier
 		_RequestResponseDataReceiverBuilder<ChainRequestModifier>,
 		_RequestCloserBuilder<ChainRequestModifier>,
 		_RequestCookieManagerBuilder<ChainRequestModifier>,
+		_RequestIdBuilder<ChainRequestModifier>,
+		_RequestHttpProxyBuilder<ChainRequestModifier>,
 	/* 操作混合 */
+		_RequestIdGetter,
 		_RequestProxyRunner,
 		_RequestUrlGetter,
 		_RequestMethodGetter,
@@ -1049,7 +1190,9 @@ class ChainRequestModifier
 		_RequestClose,
 		_ResponseCookieManager,
 		_RequestEncoder,
-		_ResponseDecoder {
+		_ResponseDecoder,
+		_RequestHttpProxyFiller,
+		_RequestProxyGetter {
 	ChainRequestModifier(this._request);
 
 	final Request _request;
@@ -1090,7 +1233,7 @@ class ChainRequestModifier
 		_buildRequest._requestCloserSet?.forEach((closer) {
 			closer._finish(this);
 		});
-		super.close();
+		super._finish();
 	}
 }
 

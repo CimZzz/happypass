@@ -19,7 +19,7 @@ class ErrorPassResponse extends ResultPassResponse {
     final dynamic error;
 
     @override
-    String toString() => msg;
+    String toString() => msg ?? "null";
 }
 
 /// Http 请求成功是返回的响应体

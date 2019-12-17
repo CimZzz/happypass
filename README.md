@@ -219,3 +219,60 @@ block www.baidu.com request
 
 `happypass` 允许开发者随时随地中断已经发生的或者尚未发生的请求。
 
+使用方法也很简单：
+```dart
+void main() async {
+    // 首先我们需要实例化一个 RequestCloser 对象
+    final requestCloser = RequestCloser();
+    // 发送 GET 请求，并使用拦截器，在执行完成请求后中断
+    final result = await Request.quickGet(url: "https://www.baidu.com", configCallback: (request) {
+        // 配置请求中断器
+        request.addRequestCloser(requestCloser);
+    });
+}
+```
+
+按照上面方法你就成功配置了一个请求中断器。中断方法也很简单
+
+```dart
+requestCloser.close();
+```
+
+这样即可中断请求，无论当前请求处于何种状态都可以调用此方法（正在执行或者尚未执行，甚至还没有配置该中断器之前）
+
+通常来说，中断都会返回一个 `ErrorPassResponse`，但是在特定情况下，也可以中断请求立即返回一个指定的响应结果:
+
+```dart
+requestCloser.close(finishResponse: /* a response derived from `ResultPassResponse`*/);
+```
+
+这样就能由你指定一个任意的请求响应结果，哪怕与该请求期望的响应结果完全无关。
+
+或者在极端情况下，当一个中断器应用到多个请求，在中断的时候，需要根据每个请求返回各自不同的响应结果，可以在构建中断器的时候那么做:
+
+```dart
+RequestCloser(responseChooseCallback: (ChainRequestModifier modifier) {
+    return ErrorPassResponse();
+});
+```
+
+配置一个 `RequestCloserResponseChooseCallback`，在中断请求时，每个请求都会触发该回调返回对应的响应结果。
+结合请求 `id` 使用可以达到最大效果。
+
+> 如果该回调返回 `null`，那么依旧会采用 `close` 中指定的响应结果
+
+灵活地运用请求中断器，可以使工程师们的编码效率事半功倍。
+
+了解更多请求中断器运用的方法，请参考示例，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example9.dart)
+
+### 请求代理
+
+`happypass` 提供了十分便捷的代理设置方式，使用以下方法即可快速设置代理:
+
+```dart
+request.addHttpProxy("localhost", 8888);
+```
+
+请求将会尝试使用 `localhost:8888` 进行代理，如果代理无法生效，仍然会从本地发起请求。
+
+### 
