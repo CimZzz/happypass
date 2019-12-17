@@ -22,27 +22,25 @@ class PassInterceptorChain{
     PassInterceptorChain._(this._request):
             this._chainRequestModifier = ChainRequestModifier(_request),
             this._interceptors = _request._passInterceptorList,
-            this._totalInterceptorCount = _request._passInterceptorList.length ?? 0,
-            this._requestCloser = _request._requestCloser;
+            this._totalInterceptorCount = _request._passInterceptorList.length ?? 0;
 
     final Request _request;
     final ChainRequestModifier _chainRequestModifier;
-    final RequestCloser _requestCloser;
     final List<PassInterceptor> _interceptors;
     final int _totalInterceptorCount;
     int _currentIdx = -1;
 
     Future<ResultPassResponse> _intercept() async {
-        this._requestCloser?._assembleModifier(this._chainRequestModifier);
+//        this._requestCloser?._assembleModifier(this._chainRequestModifier);
+        // 首次将 `ChainRequestModifier` 装配给 `RequestCloser`（请求中断器）
+        this._chainRequestModifier._assembleCloser(this._chainRequestModifier);
         // 如果请求在执行前已经被中断，则直接返回中断的响应结果
         if(this._chainRequestModifier.isClosed) {
-            this._requestCloser?._finish(_chainRequestModifier);
             final response = this._chainRequestModifier._finishResponse;
             this._chainRequestModifier._finish();
             return response;
         }
         final response = await this._chainRequestModifier._requestProxy(_waitResponse(0));
-        this._requestCloser?._finish(_chainRequestModifier);
         this._chainRequestModifier._finish();
         // 没有生成 Response，表示拦截器将请求
         if(response == null) {
@@ -149,20 +147,17 @@ class PassInterceptorChain{
                 if(chainRequestModifier.existResponseRawDataReceiverCallback()) {
                     // 如果存在响应数据原始接收回调
                     // 执行 [analyzeResponseByReceiver] 方法
-                    response = await chainRequestModifier.analyzeResponseByReceiver(httpReq, modifier);
+                    response = await chainRequestModifier.analyzeResponseByReceiver(modifier, httpReq: httpReq);
                 }
                 else {
                     // 执行 [analyzeResponse] 方法
-                    response = await chainRequestModifier.analyzeResponse(httpReq, modifier);
+                    response = await chainRequestModifier.analyzeResponse(modifier, httpReq: httpReq);
                 }
                 
             }
             httpReq = null;
-            if(response == null) {
-                return ErrorPassResponse(msg: "未能成功解析 Response");
-            }
-            
-            return response;
+
+            return response ?? ErrorPassResponse(msg: "未能成功解析 Response");
         }
         catch(e) {
             return ErrorPassResponse(msg: "请求发生异常: $e", error: e);

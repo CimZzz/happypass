@@ -109,7 +109,7 @@ class Request extends _BaseRequest {
     HttpResponseRawDataReceiverCallback _responseReceiverCallback;
     
     /// 请求中断器
-    RequestCloser _requestCloser;
+    Set<RequestCloser> _requestCloserSet;
 
     /// Cookie 管理器
     /// 该对象在克隆时，将会传递引用而不是实例化一个新的对象

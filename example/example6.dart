@@ -27,6 +27,7 @@ void main() async {
 	// 首先解释下在 [SimplePassInterceptor] 回调闭包中 `chain` 的作用
 	// 拦截器可以视为请求的一条拦路，而 chain 表示的 [PassInterceptorChain] 类则是将这些拦截器
 	// 串在一起的关键
+	// * 如果拦截器实际上不会真正地拦截请求，那么必须调用 [PassInterceptorChain.waitResponse()] 并将其结果返回
 	//
 	// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
 	// 拦截器采取的方式是首位插入，所以最先添加的拦截器最后执行
@@ -41,6 +42,7 @@ void main() async {
 	// 之前我们展示的小例子就是本质上就是 B 点所作相同
 	// 下面我们用更多的拦截器，来验证拦截器的工作流程
 	// 给每个拦截器命名，分别在收到请求与收到响应数据时打印信息
+
 	Request.quickGet(url: "http://www.baidu.com", configCallback: (request) {
 		request.addFirstInterceptor(SimplePassInterceptor((chain) async {
 			// 拦截器 A

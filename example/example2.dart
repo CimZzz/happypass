@@ -63,8 +63,9 @@ void main() async {
 	// * 调用 [RequestCloser.close] 方法可以指定一个响应结果，作为最终的请求结果
 	// * [RequestCloser.close] 可以在任何时间调用，且不会引起异常
 	// * 一个 RequestCloser 可以用于多个请求
+	// * 一个请求可以拥有多个 RequestCloser
 	final requestCloser = RequestCloser();
-	request.setRequestCloser(requestCloser);
+	request.addRequestCloser(requestCloser);
 	
 	// 设置消息的编码器和解码器
 	// 在列表末位添加编码器和解码器

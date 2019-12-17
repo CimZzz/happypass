@@ -58,11 +58,11 @@ void main() async {
 					if(modifier.existResponseRawDataReceiverCallback()) {
 						// 如果存在响应数据原始接收回调
 						// 执行 [analyzeResponseByReceiver] 方法
-						return await modifier.analyzeResponseByReceiver(httpReq, modifier);
+						return await modifier.analyzeResponseByReceiver(modifier, httpReq: httpReq);
 					}
 					else {
 						// 执行 [analyzeResponse] 方法
-						return await modifier.analyzeResponse(httpReq, modifier);
+						return await modifier.analyzeResponse(modifier, httpReq: httpReq);
 					}
 				}
 			);

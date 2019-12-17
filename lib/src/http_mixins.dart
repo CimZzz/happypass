@@ -223,6 +223,21 @@ mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 		}
 		return _returnObj;
 	}
+
+
+	/// 遍历编码器
+	/// 返回 false，中断遍历
+	void forEachEncoder(bool callback(HttpMessageEncoder encoder)) {
+		if (_buildRequest._encoderList != null) {
+			int count = _buildRequest._encoderList.length;
+			for (int i = 0; i < count; i++) {
+				final encoder = _buildRequest._encoderList[i];
+				if (!callback(encoder)) {
+					break;
+				}
+			}
+		}
+	}
 }
 
 /// 请求解码器配置混合
@@ -345,12 +360,24 @@ mixin _RequestResponseDataReceiverBuilder<ReturnType> implements _RequestMixinBa
 /// 请求中断配置
 /// 可以立即中断并返回给定的响应结果
 mixin _RequestCloserBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
-	
-	/// 配置请求中断器
-	ReturnType setRequestCloser(RequestCloser requestCloser) {
+	Set<RequestCloser> get _requestClosers {
+		return this._buildRequest._requestCloserSet ??= Set();
+	}
+
+	/// 添加请求中断器
+	ReturnType addRequestCloser(RequestCloser requestCloser) {
 		if(_buildRequest.checkExecutingStatus) {
-			this._buildRequest._requestCloser = requestCloser;
+			this._buildRequest._requestClosers.add(requestCloser);
 		}
+		return _returnObj;
+	}
+
+	/// 清空全部请求中断器
+	ReturnType clearRequestCloser() {
+		if(_buildRequest.checkExecutingStatus) {
+			this._buildRequest._requestCloserSet = null;
+		}
+
 		return _returnObj;
 	}
 }
@@ -376,7 +403,7 @@ mixin _RequestCookieManagerBuilder<ReturnType> implements _RequestMixinBase<Retu
 mixin _RequestProxyRunner implements _RequestOperatorMixBase {
 	/// 通过配置的执行代理执行回调
 	/// 注意的是，回调必须为 `static`
-	Future<Q> proxy<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
+	Future<Q> runProxy<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
 		final runProxy = _buildRequest._runProxy;
 		if (runProxy != null) {
 			return await runProxy(callback, message);
@@ -442,7 +469,7 @@ mixin _RequestHeaderFiller implements _RequestOperatorMixBase {
 		if (headers != null && headers.isNotEmpty) {
 			final bundle = _HeaderBundle(httpReq, headers);
 			if (useProxy) {
-				await modifier.proxy(_fillHeaders, bundle);
+				await modifier.runProxy(_fillHeaders, bundle);
 			} else {
 				await _fillHeaders(bundle);
 			}
@@ -468,9 +495,59 @@ class _HeaderBundle {
 	final Map<String, String> _requestHeaders;
 }
 
+/// 用于进行编码消息
+mixin _RequestEncoder implements _RequestOperatorMixBase,
+	_RequestProxyRunner {
+
+	/// 使用现有的编码器进行消息编码
+	/// - useProxy: 是否使用请求运行代理
+	Future<dynamic> encodeMessage(dynamic message, {bool useProxy = true}) {
+		final encoders = _buildRequest._encoderList;
+		if(encoders == null) {
+			// 不存在编码器，直接返回 message
+			return message;
+		}
+		final bundle = _EncodeBundle(message, encoders);
+		if(useProxy) {
+			/// 使用请求运行代理执行编码工作
+			return runProxy(_encodeMessage, bundle);
+		}
+		else {
+			return _encodeMessage(bundle);
+		}
+	}
+
+	/// 实际 encode 消息方法
+	static Future<dynamic> _encodeMessage(_EncodeBundle bundle) async {
+		var message = bundle._message;
+
+		int count = bundle._encoderList.length;
+		for (int i = 0; i < count; i++) {
+			final encoder = bundle._encoderList[i];
+			final oldMessage = message;
+			message = encoder.encode(message);
+			if (message == null) {
+				message = oldMessage;
+			}
+		}
+
+		return message;
+	}
+}
+
+/// 用于包装需要编码的消息和编码器的数据集
+class _EncodeBundle {
+	const _EncodeBundle(this._message, this._encoderList);
+
+	final dynamic _message;
+	final List<HttpMessageEncoder> _encoderList;
+}
+
+
 /// 填充 Request 请求Body
 /// 用于填充 Request Body，可选择进行代理和编码
-mixin _RequestBodyFiller implements _RequestOperatorMixBase {
+mixin _RequestBodyFiller implements _RequestOperatorMixBase,
+	_RequestEncoder {
 	/// 将配置好的 Body 填充到 HttpClientRequest 中
 	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
 	/// 结果返回
@@ -503,16 +580,7 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 					message = message.rawData;
 				}
 				else if (useEncode) {
-					final encoders = _buildRequest._encoderList;
-					// 存在编码器，进行编码
-					if (encoders != null) {
-						final bundle = _EncodeBundle(message, _buildRequest._encoderList);
-						if (useProxy) {
-							message = await modifier.proxy(_encodeMessage, bundle);
-						} else {
-							message = await _encodeMessage(bundle);
-						}
-					}
+					message = await encodeMessage(message, useProxy: useProxy);
 				}
 
 				if (message is! List<int>) {
@@ -528,17 +596,11 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 		else {
 			// 当请求体不是 RequestBody 时
 			dynamic message = body;
-			if (useEncode) {
-				final encoders = _buildRequest._encoderList;
-				// 存在编码器，进行编码
-				if (encoders != null) {
-					final bundle = _EncodeBundle(message, _buildRequest._encoderList);
-					if (useProxy) {
-						message = await modifier.proxy(_encodeMessage, bundle);
-					} else {
-						message = await _encodeMessage(bundle);
-					}
-				}
+			if(message is RawBodyData) {
+				message = message.rawData;
+			}
+			else if (useEncode) {
+				message = await encodeMessage(message, useProxy: useProxy);
 			}
 
 			if (message is! List<int>) {
@@ -547,60 +609,86 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase {
 
 			httpReq.add(message);
 		}
-
-
-
-
 		return null;
 	}
+}
 
-	/// 实际 encode 消息方法
-	static Future<List<int>> _encodeMessage(_EncodeBundle bundle) async {
-		var message = bundle._message;
+/// 用于解码消息
+mixin _ResponseDecoder implements _RequestOperatorMixBase,
+	_RequestProxyRunner {
 
-		int count = bundle._encoderList.length;
+	/// 使用现有的解码器进行消息解码
+	/// - useProxy: 是否使用请求运行代理
+	Future<dynamic> decodeMessage(dynamic message, {bool useProxy = true}) {
+		final decoders = _buildRequest._decoderList;
+		if (decoders == null) {
+			// 不存在解码器，直接返回消息
+			return message;
+		}
+
+		final bundle = _DecodeBundle(message, _buildRequest._decoderList);
+		if (useProxy) {
+			return runProxy(_decodeMessage, bundle);
+		} else {
+			return _decodeMessage(bundle);
+		}
+	}
+
+	/// 实际 decode 消息方法
+	static Future<dynamic> _decodeMessage(_DecodeBundle bundle) async {
+		dynamic decoderMessage = bundle._message;
+		List<HttpMessageDecoder> decoders = bundle._decoderList;
+
+		int count = decoders.length;
 		for (int i = 0; i < count; i++) {
-			final encoder = bundle._encoderList[i];
-			final oldMessage = message;
-			message = encoder.encode(message);
-			if (message == null) {
-				message = oldMessage;
+			final decoder = decoders[i];
+			decoderMessage = decoder.decode(decoderMessage);
+			if (decoderMessage == null) {
+				break;
 			}
 		}
 
-		return message;
+		return decoderMessage;
 	}
 }
 
-/// 用于包装需要编码的消息和编码器的数据集
-class _EncodeBundle {
-	const _EncodeBundle(this._message, this._encoderList);
+/// 用于包装需要解码的消息和解码器的数据集
+class _DecodeBundle {
+	const _DecodeBundle(this._message, this._decoderList);
 
 	final dynamic _message;
-	final List<HttpMessageEncoder> _encoderList;
+	final List<HttpMessageDecoder> _decoderList;
 }
+
 
 /// 解析 Request 的 Response Body
 /// 用于解析 Response Body，可选择进行代理和解码
-mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
+mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder {
 	/// 从 HttpClientRequest 中获取 HttpClientResponse，并读取其
 	/// 全部 Byte 数据存入 List<int> 中
 	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
 	/// 结果返回
 	/// 可以选择是否使用代理，编码
 	/// 默认情况下，开始编码与代理
+	/// - httpReq: 使用 `HttpClientRequest` 获取响应数据进行解析
+	/// - httpResp: 直接使用 `HttpClientResponse` 进行解析
 	/// - useDecode: 表示是否使用解码器处理数据
 	/// - useProxy: 表示使用使用请求执行代理来解码数据
 	/// - doNotify: 表示是否通知响应数据接收进度
-	Future<PassResponse> analyzeResponse(
-		HttpClientRequest httpReq,
+	Future<PassResponse> analyzeResponse (
 		ChainRequestModifier modifier,
 		{
+			HttpClientRequest httpReq,
+			HttpClientResponse httpResp,
 			bool useDecode = true,
 			bool useProxy = true,
 			bool doNotify = true
 		}) async {
-		HttpClientResponse httpResp = await httpReq.close();
+		// httpReq 和 httpResp 至少有一个不为 null
+		assert(httpReq != null || httpResp != null);
+		if(httpResp == null) {
+			httpResp = await httpReq.close();
+		}
 		// 存储 Cookie
 		modifier.storeCookies(modifier.getUrl(), httpResp.cookies);
 		// 标记当前请求已经执行完成
@@ -631,38 +719,12 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
 			});
 		}
 
-		dynamic decodeObj = null;
+		dynamic decodeObj = responseBody;
 		if (useDecode) {
-			final decoders = _buildRequest._decoderList;
-			// 存在编码器，进行编码
-			if (decoders != null) {
-				final bundle = _DecodeBundle(responseBody, _buildRequest._decoderList);
-				if (useProxy) {
-					decodeObj = await modifier.proxy(_decodeMessage, bundle);
-				} else {
-					decodeObj = await _decodeMessage(bundle);
-				}
-			}
+			decodeObj = await decodeMessage(decodeObj, useProxy: useProxy);
 		}
 
 		return ProcessablePassResponse(httpResp, responseBody, decodeObj);
-	}
-
-	/// 实际 decode 消息方法
-	static Future<dynamic> _decodeMessage(_DecodeBundle bundle) async {
-		dynamic decoderMessage = bundle._message;
-		List<HttpMessageDecoder> decoders = bundle._decoderList;
-
-		int count = decoders.length;
-		for (int i = 0; i < count; i++) {
-			final decoder = decoders[i];
-			decoderMessage = decoder.decode(decoderMessage);
-			if (decoderMessage == null) {
-				break;
-			}
-		}
-
-		return decoderMessage;
 	}
 	
 	
@@ -670,15 +732,22 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
 	/// 全部 Byte 数据全部传输到 [HttpResponseRawDataReceiverCallback] 中处理
 	/// 如果 Body 在处理过程中发生错误，则会直接返回 ErrorPassResponse，程序应直接将这个
 	/// 结果返回
+	/// - httpReq: 使用 `HttpClientRequest` 获取响应数据进行解析
+	/// - httpResp: 直接使用 `HttpClientResponse` 进行解析
 	/// - doNotify: 表示是否通知响应数据接收进度
 	Future<PassResponse> analyzeResponseByReceiver(
-		HttpClientRequest httpReq,
 		ChainRequestModifier modifier,
 		{
+			HttpClientRequest httpReq,
+			HttpClientResponse httpResp,
 			bool doNotify = true
 		}
 	) async {
-		HttpClientResponse httpResp = await httpReq.close();
+		// httpReq 和 httpResp 至少有一个不为 null
+		assert(httpReq != null || httpResp != null);
+		if(httpResp == null) {
+			httpResp = await httpReq.close();
+		}
 		// 存储 Cookie
 		modifier.storeCookies(modifier.getUrl(), httpResp.cookies);
 		Stream<List<int>> rawByteDataStream;
@@ -725,14 +794,6 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase {
 	}
 }
 
-/// 用于包装需要解码的消息和解码器的数据集
-class _DecodeBundle {
-	const _DecodeBundle(this._message, this._decoderList);
-
-	final dynamic _message;
-	final List<HttpMessageDecoder> _decoderList;
-}
-
 
 /// 通知当前 Response Body 接收进度
 /// 用于解析 Response Body，可选择进行代理和解码
@@ -760,7 +821,10 @@ mixin _ResponseRawDataTransfer implements _RequestOperatorMixBase {
 	/// 调用接收响应原始数据接口，将 Future 直接返回
 	/// 该方法并未在执行代理中执行
 	Future<dynamic> transferRawDataForRawDataReceiver(Stream<List<int>> rawDataStream) {
-		return this._buildRequest._responseReceiverCallback(rawDataStream);
+		if(this._buildRequest._responseReceiverCallback != null) {
+			return this._buildRequest._responseReceiverCallback(rawDataStream);
+		}
+		return null;
 	}
 }
 
@@ -779,7 +843,7 @@ mixin _RequestExecutedChanger implements _RequestOperatorMixBase {
 
 /// 中断请求
 /// 可以强制中断请求结束，并返回指定的响应结果
-mixin _RequestClose {
+mixin _RequestClose implements _RequestOperatorMixBase {
 	/// 判断当前请求是否已经结束
 	bool _isClosed = false;
 	bool get isClosed => this._isClosed || _finishResponse != null;
@@ -795,7 +859,21 @@ mixin _RequestClose {
 	Completer<PassResponse> _innerCompleter = Completer();
 	/// 内部 Completer 的流订阅
 	StreamSubscription<PassResponse> _innerSubscription;
-	
+
+	/// 用于 `ChainRequestModifier` 首次装配给 `RequestCloser`
+	void _assembleCloser(ChainRequestModifier modifier) {
+		final closerSet = this._buildRequest._requestCloserSet;
+		if(closerSet != null) {
+			for(var closer in closerSet) {
+				closer._assembleModifier(modifier);
+				if(this.isClosed) {
+					// 如果请求被某个中断器中断的话，那么将不再访问后续中断器
+					break;
+				}
+			}
+		}
+	}
+
 	/// 代理执行请求逻辑
 	/// 大致流程如下:
 	///
@@ -969,7 +1047,9 @@ class ChainRequestModifier
 		_RequestExecutedChanger,
 		_ResponseRawDataTransfer,
 		_RequestClose,
-		_ResponseCookieManager {
+		_ResponseCookieManager,
+		_RequestEncoder,
+		_ResponseDecoder {
 	ChainRequestModifier(this._request);
 
 	final Request _request;
@@ -979,5 +1059,38 @@ class ChainRequestModifier
 
 	@override
 	Request get _buildRequest => _request;
+
+
+	/// 添加请求中断器
+	/// 在 `ChainRequestModifier` 生成后，每添加一个新的 `RequestCloser` 都会立即进行装配
+	@override
+	ChainRequestModifier addRequestCloser(RequestCloser requestCloser) {
+		super.addRequestCloser(requestCloser);
+		if(_buildRequest.checkExecutingStatus) {
+			// 在 `ChainRequestModifier` 生成后，每添加一个新的 `RequestCloser` 都会立即进行装配
+			requestCloser._assembleModifier(this);
+		}
+		return this;
+	}
+
+	/// 清空全部请求中断器
+	/// 在 `ChainRequestModifier` 生成后，每次清空都会将自身从旧中断器中卸载
+	/// * 因为 `ChainRequestModifier` 确保每个中断器都装配了自身
+	@override
+	ChainRequestModifier clearRequestCloser() {
+		_buildRequest._requestCloserSet?.forEach((closer) {
+			closer._finish(this);
+		});
+		return super.clearRequestCloser();
+	}
+
+	/// 清理当前所持有的引用和状态
+	@override
+	void _finish() {
+		_buildRequest._requestCloserSet?.forEach((closer) {
+			closer._finish(this);
+		});
+		super.close();
+	}
 }
 

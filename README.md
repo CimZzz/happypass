@@ -116,7 +116,9 @@ Request.quickPost(
 
 关于这两个方法更为细致地介绍，请参考样例，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example5.dart)
 
-#### HTTP 拦截器
+### HTTP 拦截器
+
+`happypass` 提供了强大的拦截器功能，在这里你可以对自己的请求进行高度自由化的定制！首先让我们了解一下`拦截器`的工作原理吧！
 
 拦截器是整个 `happypass` 的核心，每个请求缺省都会带有一个 `BusinessPassInterceptor` 拦截器。该拦截器的作用就是执行实际的请求逻辑。
 
@@ -140,6 +142,8 @@ Request.quickPost(
 上述在 B 的位置直接拦截，请求并未传递到 `BusinessPassInterceptor`，所以 Request 的处理和 `Response` 的构建都应由 B 完成
 需要注意的是，如果拦截器只是对 `Request` 进行修改或者观察，并不想实际处理的话，请调用
 `PassInterceptorChain.waitResponse` 方法，表示将 `Request` 向下传递，然后将其结果返回表示将 `Response` 向上返回。
+
+> 需要注意的是，如果拦截器不想对请求进行拦截，请务必调用 `PassInterceptorChain.waitResponse` 方法并且其结果返回（或者根据其结果进行二次加工后的结果）
  
 我们也可以添加拦截器在请求链路上做一些自定义行为，比如拦截来自某个域名的请求
 
@@ -173,7 +177,7 @@ block www.baidu.com request
 
 更多拦截器的使用方法与详细探究，请参考实例，[点击查看](https://github.com/CimZzz/happypass/blob/master/example)
 
-#### 请求 Body、编码器、解码器
+### 请求 Body、编码器、解码器
 
 `happypass` 中，一次完整请求数据流程大致如下:
 
@@ -211,6 +215,7 @@ block www.baidu.com request
 **如果以上请求体数据不能满足你的需求，那么去定义一个继承自 `RequestBody` 的类作为属于你自己的自定义 `RequestBody` 吧！**
 
 
-#### 请求中断
+### 请求中断
 
-`happypass` 支持开发者随时随地中断请求
+`happypass` 允许开发者随时随地中断已经发生的或者尚未发生的请求。
+
