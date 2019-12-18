@@ -14,9 +14,10 @@ abstract class ResultPassResponse extends PassResponse {
 
 /// Http 请求失败时返回的响应体
 class ErrorPassResponse extends ResultPassResponse {
-    const ErrorPassResponse({this.msg, this.error}): super(false);
+    const ErrorPassResponse({this.msg, this.error, this.stacktrace}): super(false);
     final String msg;
     final dynamic error;
+    final StackTrace stacktrace;
 
     @override
     String toString() => msg ?? "null";

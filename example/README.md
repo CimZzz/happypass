@@ -36,5 +36,25 @@
     
     列举了各种情况下请求中断器的用法，合理地运用请求中断器，会大大提升你的编码效率。
     
+- [配置请求运行代理](example10.dart)
+
+    本示例演示了如何利用请求运行代理优化请求的执行效率，编解码这些耗时操作将不再阻塞程序正常运转。
+    
+- [请求超时配置](example11.dart)
+
+    本示例演示了如何设置请求超时时间，并对各个超时字段进行详细解释。
+    
+- [请求 body - FormDataBody](example12.dart)
+
+    本示例演示了如何使用 `FormDataBody` 传递标准表单数据。
+    
+- [请求 body - MultipartDataBody](example13.dart)
+
+    本示例演示了如何使用 `MultipartDataBody`  Multipart 表单数据。
+    
+- [请求 body - MultipartDataBody](example14.dart)
+
+    本示例演示了如何使用
+    
     
     

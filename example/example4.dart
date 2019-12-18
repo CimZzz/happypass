@@ -18,6 +18,19 @@ void main() async {
 	// 那么最终的 Url 地址为 "http://www.helloworld.com/money"
 	prototype.addPath("/money");
 
+	// 设置总超时时间
+	// 总时长超过超时时间将会抛出异常
+	// * 拦截器处理时间也算在总时长之内
+	prototype.setTotalTimeOut(const Duration(seconds: 5));
+
+	// 设置连接超时时间
+	// 连接时长超过超时时间将会抛出异常
+	prototype.setConnectTimeOut(const Duration(seconds: 5));
+
+	// 设置读取超时时间
+	// 读取时长超过超时时间将会抛出异常
+	prototype.setReadTimeOut(const Duration(seconds: 5));
+
 	// 添加请求 Url 参数
 	// 如果当前 Url 地址为 `http://www.helloworld.com/money`，那么添加 Url 参数过后，整个 Url 地址为
 	// `http://www.helloworld.com/money?tech=neverend`。

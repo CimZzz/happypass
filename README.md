@@ -275,4 +275,56 @@ request.addHttpProxy("localhost", 8888);
 
 请求将会尝试使用 `localhost:8888` 进行代理，如果代理无法生效，仍然会从本地发起请求。
 
-### 
+### 超时设置
+
+一般我们对于请求时长都有严格要求，如果超时需要中断当前请求连接并返回异常。按照下面方法，可以非常简单的配置超时时间
+
+```dart
+
+// 设置总超时时间
+// 总时长超过超时时间将会抛出异常
+// * 拦截器处理时间也算在总时长之内
+request.setTotalTimeOut(const Duration(seconds: 5));
+
+// 设置连接超时时间
+// 连接时长超过超时时间将会抛出异常
+request.setConnectTimeOut(const Duration(seconds: 5));
+
+// 设置读取超时时间
+// 读取时长超过超时时间将会抛出异常
+request.setReadTimeOut(const Duration(seconds: 5));
+```
+
+`happypass` 也提供了相当详细的示例文档，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example11.dart)
+
+### 请求运行代理
+
+这个概念容易和 `http` 代理混淆，两者的区别如下:
+
+> 请求运行代理: 在请求配置与解析时，可能会发生一些比较耗时的操作（例如解析 JSON），官方建议使用 `Isolate` 来单独处理这些操作，以防止造成
+> 卡顿等情况，而请求运行代理就是为了解决这个问题而生的。你可以在请求代理中使用一个 `Isolate` 去执行参数中的回调，然后将其结果返回。
+> 
+> 请求 HTTP 代理: 使用指定的 HTTP 代理服务器发送请求。
+
+在 `Flutter` 中，`compute` 方法与请求运行代理高度契合，可以很方便配置
+
+```dart
+setRequestRunProxy(<T, Q>(asyncCallback, message) async {
+  return await compute(asyncCallback, message);
+});
+```
+
+这样，复杂的编解码操作都交给另外的 `Isolate` 处理了。
+
+示例中也介绍了 `Dart` 的实现方式，[点击查看](https://github.com/CimZzz/happypass/blob/master/example/example10.dart)
+
+### 设置 Cookie 管理器
+
+`happypass` 可以配置 `CookieManager`，帮助开发者管理请求中的 `Cookie`。
+
+```dart
+request.setCookieManager(MemoryCacheCookieManager());
+```
+
+> `MemoryCacheCookieManager` 是 `happypass` 提供的一个内存 Cookie 缓存管理器，开发者可以自定义 `CookieManager` 将之替换。
+> * 默认情况下，请求是不会携带 `CookieManger`

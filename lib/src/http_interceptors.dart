@@ -40,7 +40,7 @@ class PassInterceptorChain{
             this._chainRequestModifier._finish();
             return response;
         }
-        final response = await this._chainRequestModifier._requestProxy(_waitResponse(0));
+        final response = await this._chainRequestModifier._requestProxy(this._chainRequestModifier.runInTotalTimeout(_waitResponse(0)));
         this._chainRequestModifier._finish();
         // 没有生成 Response，表示拦截器将请求
         if(response == null) {
@@ -74,6 +74,10 @@ class PassInterceptorChain{
 
     /// 等待其他拦截器返回 `Response`
     Future<PassResponse> waitResponse() async {
+        if(modifier.isClosed) {
+            // 如果请求已经取消，则直接返回 null
+            return null;
+        }
         return await _waitResponse(this._currentIdx + 1);
     }
 
@@ -83,7 +87,7 @@ class PassInterceptorChain{
     Future<PassResponse> requestForPassResponse({
         /// HttpClient 构造器
         /// 可以自定义 HttpClient 的构造方式
-        HttpClient httpClientBuilder(),
+        HttpClient httpClientBuilder(ChainRequestModifier modifier),
 
         /// HttpClientRequest 构造器
         /// 可以自定义 HttpClientRequest 的构造方式
@@ -101,11 +105,28 @@ class PassInterceptorChain{
         HttpClient client;
         HttpClientRequest httpReq;
         try {
-            client = httpClientBuilder != null ? httpClientBuilder() : HttpClient();
-            modifier.assembleHttpClient(client);
-            // 配置 HTTP 请求代理
-            modifier.fillRequestHttpProxy(client);
+
             final chainRequestModifier = this.modifier;
+            if(chainRequestModifier.isClosed) {
+                // 如果请求已经取消，则直接返回 null
+                return null;
+            }
+
+
+            if(httpClientBuilder != null) {
+                client = httpClientBuilder(chainRequestModifier);
+            }
+            else {
+                client = HttpClient();
+                // 设置宽松的超时时间，目的是为了由我们接管超时处理逻辑
+                chainRequestModifier.fillLooseTimeout(client);
+            }
+            // 装配 `HttpClient`，保证中断器可以正常中断请求
+            chainRequestModifier.assembleHttpClient(client);
+            // 配置 HTTP 请求代理
+            chainRequestModifier.fillRequestHttpProxy(client);
+
+
             final method = chainRequestModifier.getRequestMethod();
 
             // 创建请求对象
@@ -115,10 +136,12 @@ class PassInterceptorChain{
             else {
                 final url = chainRequestModifier.getUrl();
                 if (method == RequestMethod.POST) {
-                    httpReq = await client.postUrl(Uri.parse(url));
+                    // 限制在连接超时时间内获取 `HttpClientRequest`
+                    httpReq = await chainRequestModifier.runInConnectTimeout(client.postUrl(Uri.parse(url)));
                 }
                 else {
-                    httpReq = await client.getUrl(Uri.parse(url));
+                    // 限制在连接超时时间内获取 `HttpClientRequest`
+                    httpReq = await chainRequestModifier.runInConnectTimeout(client.getUrl(Uri.parse(url)));
                 }
             }
             
@@ -149,11 +172,13 @@ class PassInterceptorChain{
                 if(chainRequestModifier.existResponseRawDataReceiverCallback()) {
                     // 如果存在响应数据原始接收回调
                     // 执行 [analyzeResponseByReceiver] 方法
-                    response = await chainRequestModifier.analyzeResponseByReceiver(modifier, httpReq: httpReq);
+                    // 限制在读取超时时间内解析完成 `HttpClientResponse`
+                    response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponseByReceiver(modifier, httpReq: httpReq));
                 }
                 else {
                     // 执行 [analyzeResponse] 方法
-                    response = await chainRequestModifier.analyzeResponse(modifier, httpReq: httpReq);
+                    // 限制在读取超时时间内解析完成 `HttpClientResponse`
+                    response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(modifier, httpReq: httpReq));
                 }
                 
             }
@@ -161,17 +186,10 @@ class PassInterceptorChain{
 
             return response ?? ErrorPassResponse(msg: "未能成功解析 Response");
         }
-        catch(e) {
-            return ErrorPassResponse(msg: "请求发生异常: $e", error: e);
+        catch(e, stackTrace) {
+            return ErrorPassResponse(msg: "请求发生异常: $e", error: e, stacktrace: stackTrace);
         }
         finally {
-            if(httpReq != null) {
-                try {
-                    httpReq.close();
-                }
-                catch(e){}
-                httpReq = null;
-            }
             if(client != null) {
                 try {
                     client.close(force: true);

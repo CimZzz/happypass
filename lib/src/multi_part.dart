@@ -115,7 +115,7 @@ class MultipartDataBody extends RequestBody {
 	}
 
 	/// 添加文本 Multipart 数据
-	MultipartDataBody addMultiPartText(String name, String text, { String fileName, String contentType}) {
+	MultipartDataBody addMultipartText(String name, String text, { String fileName, String contentType}) {
 		return addMultiPartData(MultiData(name: name, data: text, fileName: fileName, contentType: _getDefaultContentType(fileName)));
 	}
 

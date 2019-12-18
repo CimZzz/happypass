@@ -24,10 +24,20 @@ void main() async {
 				// * 请求已经开始运作，请求中断器在这个时候可以中断 `HttpClient` 来实现
 				// * 请求的中断
 				modifier.assembleHttpClient(client);
+
+				// 填充宽松请求超时时间，这是为了由我们来接管超时处理逻辑
+				// 比如使用 [ChainRequestModifier.runInConnectTimeout] 将生成 `HttpClientRequest` 方法包装起来，
+				// 如果在给定连接超时时间内没有生成成功，那么该方法将会直接抛出连接超时异常
+				//
+				// * 如果不想使用 `happypass` 管理超时时间，那么可以使用 [ChainRequestModifier.fillTightTimeout] 方法
+				// * 设置紧迫超时时间。如果超时将会由 `HttpClient` 抛出超时异常
+				//
+				// modifier.fillTightTimeout(client);
+				modifier.fillLooseTimeout(client);
 				// 根据请求方法来生成 `HttpClientRequest`
 				final url = modifier.getUrl();
 				if(modifier.getRequestMethod() == RequestMethod.POST) {
-					httpReq = await client.postUrl(Uri.parse(url));
+					httpReq = await modifier.runInConnectTimeout(client.postUrl(Uri.parse(url)));
 				}
 				else {
 					httpReq = await client.getUrl(Uri.parse(url));
@@ -165,57 +175,63 @@ void main() async {
 				PassResponse passResponse;
 
 				if(modifier.existResponseRawDataReceiverCallback()) {
-					// 如果存在原始响应数据接收回调，应将实际处理逻辑交由接口实现
-					// 请参考下面写法，能够确保请求设置的原始响应数据接收回调正常工作
-					Stream<List<int>> rawDataStream = httpResponse;
+					// 使用 [ChainRequestModifier.runInReadTimeOut] 方法将处理响应数据方法包装起来，这样可以在解析时间超时时抛出异常
+					passResponse = await modifier.runInReadTimeout(() async {
+						// 如果存在原始响应数据接收回调，应将实际处理逻辑交由接口实现
+						// 请参考下面写法，能够确保请求设置的原始响应数据接收回调正常工作
+						Stream<List<int>> rawDataStream = httpResponse;
 
-					// * 如果想让响应数据通知进度功能生效的话，我们必须在接收响应数据时进行处理
-					// * 调用 [ChainRequestModifier.notifyResponseDataUpdate] 方法可以通知全部进度回调进度更新
-					// * 下面会在原始数据 byte 流外包裹一层 Stream，用来实现进度通知功能
-					Stream<List<int>> rawDataStreamWrap(Stream<List<int>> rawStream) async* {
-						await for (var byteList in rawStream) {
+						// * 如果想让响应数据通知进度功能生效的话，我们必须在接收响应数据时进行处理
+						// * 调用 [ChainRequestModifier.notifyResponseDataUpdate] 方法可以通知全部进度回调进度更新
+						// * 下面会在原始数据 byte 流外包裹一层 Stream，用来实现进度通知功能
+						Stream<List<int>> rawDataStreamWrap(Stream<List<int>> rawStream) async* {
+							await for (var byteList in rawStream) {
+								// 每当接收到新数据时，进行通知更新
+								curLength += byteList.length;
+								modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
+								yield byteList;
+							}
+						}
+
+						// 接收之前先触发一次空进度通知
+						modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
+
+						final result = await modifier.transferRawDataForRawDataReceiver(rawDataStreamWrap(rawDataStream));
+
+						if(result is PassResponse) {
+							return result;
+						}
+						else {
+							return ProcessablePassResponse(httpResponse, null, result);
+						}
+					}());
+				}
+				else {
+					// 使用 [ChainRequestModifier.runInReadTimeOut] 方法将处理响应数据方法包装起来，这样可以在解析时间超时时抛出异常
+					passResponse = await modifier.runInReadTimeout(() async {
+						// 不存在原始响应数据接收回调，执行标准解析逻辑
+						// 参考下面写法，能够确保 `happypass` 各个功能正常工作
+						List<int> responseBody = List();
+
+						// 接收之前先触发一次空进度通知
+						modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
+						await httpResponse.forEach((byteList) {
+							responseBody.addAll(byteList);
 							// 每当接收到新数据时，进行通知更新
 							curLength += byteList.length;
 							modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
-							yield byteList;
-						}
-					}
-
-					// 接收之前先触发一次空进度通知
-					modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
-
-					final result = await modifier.transferRawDataForRawDataReceiver(rawDataStreamWrap(rawDataStream));
-
-					if(result is PassResponse) {
-						passResponse = result;
-					}
-					else {
-						passResponse = ProcessablePassResponse(httpResponse, null, result);
-					}
-				}
-				else {
-					// 不存在原始响应数据接收回调，执行标准解析逻辑
-					// 参考下面写法，能够确保 `happypass` 各个功能正常工作
-					List<int> responseBody = List();
-
-					// 接收之前先触发一次空进度通知
-					modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
-					await httpResponse.forEach((byteList) {
-						responseBody.addAll(byteList);
-						// 每当接收到新数据时，进行通知更新
-						curLength += byteList.length;
-						modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
-					});
+						});
 
 
-					dynamic decodeObj = responseBody;
+						dynamic decodeObj = responseBody;
 
-					// * 按照标准流程，应该对收集到的响应数据进行解码
-					// * 使用 [ChainRequestModifier.decodeMessage] 方法能够快捷进行解码
-					// * 当然，你也可以遍历编码器进行解码，这一切取决你
-					decodeObj = await modifier.decodeMessage(decodeObj, useProxy: true);
+						// * 按照标准流程，应该对收集到的响应数据进行解码
+						// * 使用 [ChainRequestModifier.decodeMessage] 方法能够快捷进行解码
+						// * 当然，你也可以遍历编码器进行解码，这一切取决你
+						decodeObj = await modifier.decodeMessage(decodeObj, useProxy: true);
 
-					passResponse = ProcessablePassResponse(httpResponse, responseBody, decodeObj);
+						return ProcessablePassResponse(httpResponse, responseBody, decodeObj);
+					}());
 				}
 
 				// 如果接收完毕但没有返回应有的响应对象，那么会返回一个 `ErrorPassResponse` 表示处理出错

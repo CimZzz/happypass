@@ -10,7 +10,7 @@ class FormDataBody extends RequestBody {
 	FormDataBody();
 
 	/// 以键值对 Map 的形式创建 FormDataBody
-	FormDataBody.createByMap({Map<String, String> map}) {
+	FormDataBody.createByMap(Map<String, String> map) {
 		addMap(map);
 	}
 

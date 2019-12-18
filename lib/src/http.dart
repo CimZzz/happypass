@@ -121,6 +121,16 @@ class Request extends _BaseRequest {
     
     /// 请求 Http 代理
     List<PassHttpProxy> _httpProxyList;
+
+    /// 请求总超时时间
+    /// 包括拦截器处理耗时也会计算到其中
+    Duration _totalTimeout;
+
+    /// 请求连接超时时间
+    Duration _connectTimeout;
+
+    /// 请求读取超时时间
+    Duration _readTimeout;
     
     /// 执行请求
     /// 只有在 [_RequestStatus.Prepare] 状态下才会实际发出请求

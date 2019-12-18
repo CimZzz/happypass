@@ -30,17 +30,21 @@ void main() async {
 			return chain.requestForPassResponse(
 				// HttpClient 构造器
 				// 可以自定义 HttpClient 的构造方式
-				httpClientBuilder: () => HttpClient(),
+				httpClientBuilder: (ChainRequestModifier modifier) {
+					final client = HttpClient();
+					modifier.fillLooseTimeout(client);
+					return client;
+				},
 
 				// HttpClientRequest 构造器
 				// 可以自定义 HttpClientRequest 的构造方式
 				httpReqBuilder: (HttpClient client, ChainRequestModifier modifier) {
 					final uri = Uri.parse(modifier.getUrl());
 					if(modifier.getRequestMethod() == RequestMethod.GET) {
-						return client.getUrl(uri);
+						return modifier.runInConnectTimeout(client.getUrl(uri));
 					}
 					else {
-						return client.postUrl(uri);
+						return modifier.runInConnectTimeout(client.postUrl(uri));
 					}
 				},
 
@@ -58,11 +62,11 @@ void main() async {
 					if(modifier.existResponseRawDataReceiverCallback()) {
 						// 如果存在响应数据原始接收回调
 						// 执行 [analyzeResponseByReceiver] 方法
-						return await modifier.analyzeResponseByReceiver(modifier, httpReq: httpReq);
+						return await modifier.runInReadTimeout(modifier.analyzeResponseByReceiver(modifier, httpReq: httpReq));
 					}
 					else {
 						// 执行 [analyzeResponse] 方法
-						return await modifier.analyzeResponse(modifier, httpReq: httpReq);
+						return await modifier.runInReadTimeout(modifier.analyzeResponse(modifier, httpReq: httpReq));
 					}
 				}
 			);
