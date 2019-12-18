@@ -328,3 +328,10 @@ request.setCookieManager(MemoryCacheCookieManager());
 
 > `MemoryCacheCookieManager` 是 `happypass` 提供的一个内存 Cookie 缓存管理器，开发者可以自定义 `CookieManager` 将之替换。
 > * 默认情况下，请求是不会携带 `CookieManger`
+
+## 联系我
+
+如果您在使用的过程中有更好的想法，或者发现什么问题，都可以联系我，共同进行交流:
+
+QQ: 1152564696
+Mail: 1152564696@qq.com
