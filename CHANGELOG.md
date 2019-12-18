@@ -38,4 +38,9 @@
 - 新增请求中断器 `RequestCloser`
 - 新增请求 `id`
 - 新增请求总超时、连接超时与读取超时
-- 新增 `CookieManager`  
+- 新增 `CookieManager`
+- 大规模重构文档 
+
+## 1.0.7 
+
+- 优化文档

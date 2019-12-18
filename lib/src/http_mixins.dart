@@ -436,7 +436,7 @@ mixin _RequestHttpProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnTy
   ReturnType removeHttpProxyByHost(String host) {
     if (_buildRequest.checkExecutingStatus && _buildRequest._httpProxyList != null) {
       _httpProxies.removeWhere((proxy) {
-        proxy.host == host;
+        return proxy.host == host;
       });
       if (_httpProxies.isEmpty) {
         _buildRequest._httpProxyList = null;
@@ -1032,10 +1032,13 @@ mixin _ResponseCookieManager implements _RequestOperatorMixBase {
 mixin _RequestProxyGetter implements _RequestOperatorMixBase {
   /// 获取指定 Host 下全部的请求 Http 代理
   List<PassHttpProxy> getPassHttpProxiesByHost(String host) {
-    List<PassHttpProxy> list = null;
+    List<PassHttpProxy> list;
     if (_buildRequest._httpProxyList != null) {
       _buildRequest._httpProxyList.forEach((proxy) {
         if (proxy.host == host) {
+          if (list == null) {
+            list = List();
+          }
           list.add(proxy);
         }
       });
@@ -1050,7 +1053,7 @@ mixin _RequestProxyGetter implements _RequestOperatorMixBase {
   }
 
   /// 遍历请求 Http 代理
-  void forEachPassHttpProxies(void callback(PassHttpProxy)) {
+  void forEachPassHttpProxies(void callback(PassHttpProxy proxy)) {
     if (_buildRequest._httpProxyList != null) {
       _buildRequest._httpProxyList.forEach(callback);
     }
@@ -1169,6 +1172,7 @@ mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
         if (!completer.isCompleted) {
           completer.completeError("connect time out");
         }
+        return null;
       })
         ..then((data) {
           if (!completer.isCompleted) {
@@ -1201,6 +1205,7 @@ mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
         if (!completer.isCompleted) {
           completer.completeError("read time out");
         }
+        return null;
       })
         ..then((data) {
           if (!completer.isCompleted) {

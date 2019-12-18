@@ -19,19 +19,18 @@ part of 'http.dart';
 /// [PassInterceptorChain.requestForPassResponse] 将构建好的 Request 通过 HttpClient 的方式转换为 Response(PassResponse)
 /// [PassInterceptorChain.modifier] 可以对 Request 进行修改
 class PassInterceptorChain {
-  PassInterceptorChain._(this._request)
-      : this._chainRequestModifier = ChainRequestModifier(_request),
-        this._interceptors = _request._passInterceptorList,
-        this._totalInterceptorCount = _request._passInterceptorList.length ?? 0;
+  PassInterceptorChain._(Request request)
+      : assert(request != null),
+        this._chainRequestModifier = ChainRequestModifier(request),
+        this._interceptors = request._passInterceptorList,
+        this._totalInterceptorCount = request._passInterceptorList.length ?? 0;
 
-  final Request _request;
   final ChainRequestModifier _chainRequestModifier;
   final List<PassInterceptor> _interceptors;
   final int _totalInterceptorCount;
   int _currentIdx = -1;
 
   Future<ResultPassResponse> _intercept() async {
-//        this._requestCloser?._assembleModifier(this._chainRequestModifier);
     // 首次将 `ChainRequestModifier` 装配给 `RequestCloser`（请求中断器）
     this._chainRequestModifier._assembleCloser(this._chainRequestModifier);
     // 如果请求在执行前已经被中断，则直接返回中断的响应结果
@@ -180,9 +179,7 @@ class PassInterceptorChain {
       return ErrorPassResponse(msg: "请求发生异常: $e", error: e, stacktrace: stackTrace);
     } finally {
       if (client != null) {
-        try {
-          client.close(force: true);
-        } catch (e) {}
+        client.close(force: true);
         client = null;
       }
     }
