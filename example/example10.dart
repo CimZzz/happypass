@@ -15,57 +15,57 @@ import 'package:happypass/happypass.dart';
 /// * `happypass` 支持拦截器使用请求运行代理执行任意自定义方法，仅需通过 [ChainRequestModifier.runProxy] 方法即可
 ///
 void main() async {
-	// 我们使用 [Request.quickGet] 方法快速发出一个 `GET` 请求
-	final result = await Request.quickGet(url: "https://www.baidu.com", configCallback: (request) {
-		request.stringChannel();
-		// 给请求配置一个运行代理请求
-		// 使用 [_Receiver] 对象作为消息回调、消息和 `SendPort` 的数据载体
-		// 指定 `Isolate` 运行回调为 [_doProxy] 方法
-		// 大致流程如下:
-		// 启动 Isolate，指定运行回调为 [_doProxy]，配置参数为 [_Receiver]。在 [_doProxy] 方法里调用 [_Receiver.execute] 获取结果，
-		// 然后通过 [_Receiver.port] 发送结果
-		request.setRequestRunProxy(<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
-			final receiverPort = ReceivePort();
-			final isolate = await Isolate.spawn(_doProxy, _Receiver(message, callback, receiverPort.sendPort));
-			final result = await receiverPort.first;
-			receiverPort.close();
-			isolate.kill();
-			if(result is ErrorPassResponse) {
-				throw IOException;
-			}
-			return result;
-		});
-	});
+  // 我们使用 [Request.quickGet] 方法快速发出一个 `GET` 请求
+  final result = await Request.quickGet(
+      url: "https://www.baidu.com",
+      configCallback: (request) {
+        request.stringChannel();
+        // 给请求配置一个运行代理请求
+        // 使用 [_Receiver] 对象作为消息回调、消息和 `SendPort` 的数据载体
+        // 指定 `Isolate` 运行回调为 [_doProxy] 方法
+        // 大致流程如下:
+        // 启动 Isolate，指定运行回调为 [_doProxy]，配置参数为 [_Receiver]。在 [_doProxy] 方法里调用 [_Receiver.execute] 获取结果，
+        // 然后通过 [_Receiver.port] 发送结果
+        request.setRequestRunProxy(<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
+          final receiverPort = ReceivePort();
+          final isolate = await Isolate.spawn(_doProxy, _Receiver(message, callback, receiverPort.sendPort));
+          final result = await receiverPort.first;
+          receiverPort.close();
+          isolate.kill();
+          if (result is ErrorPassResponse) {
+            throw IOException;
+          }
+          return result;
+        });
+      });
 
-	print(result);
+  print(result);
 
-	// 在 `Flutter` 中，执行回调与 `Flutter` 提供的 `compute` 方法完美契合，可以参考如下配置
-	/*
+  // 在 `Flutter` 中，执行回调与 `Flutter` 提供的 `compute` 方法完美契合，可以参考如下配置
+  /*
 	*  setRequestRunProxy(<T, Q>(asyncCallback, message) async {
     *    return await compute(asyncCallback, message);
 	*  });
 	* */
 }
 
-
 class _Receiver<T, Q> {
-	_Receiver(this.message, this.callback, this.port);
-	final T message;
-	final AsyncRunProxyCallback<T, Q> callback;
-	final SendPort port;
+  _Receiver(this.message, this.callback, this.port);
 
-	Future<Q> execute() async {
-		return await callback(message);
-	}
+  final T message;
+  final AsyncRunProxyCallback<T, Q> callback;
+  final SendPort port;
+
+  Future<Q> execute() async {
+    return await callback(message);
+  }
 }
 
-
 void _doProxy(_Receiver receiver) async {
-	try {
-		final result = await receiver.execute();
-		receiver.port.send(result);
-	}
-	catch(e) {
-		receiver.port.send(ErrorPassResponse());
-	}
+  try {
+    final result = await receiver.execute();
+    receiver.port.send(result);
+  } catch (e) {
+    receiver.port.send(ErrorPassResponse());
+  }
 }
