@@ -522,7 +522,7 @@ mixin _RequestUrlGetter implements _RequestOperatorMixBase {
   String getUrl() => _buildRequest._url;
 
   /// 获取 Url 转换过的 HttpUrl 对象
-  HttpUrl getHttpUrl() => HttpUtils.resolveUrl(_buildRequest._url);
+  PassHttpUrl getHttpUrl() => PassHttpUtils.resolveUrl(_buildRequest._url);
 }
 
 /// 获取请求 Url 配置混合
@@ -1005,7 +1005,7 @@ mixin _ResponseCookieManager implements _RequestOperatorMixBase {
       return;
     }
 
-    final httpUrl = HttpUtils.resolveUrl(url);
+    final httpUrl = PassHttpUtils.resolveUrl(url);
     if (httpUrl == null) {
       return;
     }
@@ -1019,7 +1019,7 @@ mixin _ResponseCookieManager implements _RequestOperatorMixBase {
       return null;
     }
 
-    final httpUrl = HttpUtils.resolveUrl(url);
+    final httpUrl = PassHttpUtils.resolveUrl(url);
     if (httpUrl == null) {
       return null;
     }

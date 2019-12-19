@@ -44,3 +44,8 @@
 ## 1.0.7 
 
 - 优化文档
+
+## 1.0.8
+
+- 重命名 HttpUtils -> PassHttpUtils
+- 重命名 HttpUrl -> PassHttpUrl
