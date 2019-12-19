@@ -125,18 +125,23 @@ Request.quickPost(
 拦截器的工作原理可以简单描述为一条请求链路，最终的目的是获取响应结果。
 
 > 这里指的响应结果为 `ResultPassResponse` 的子类。该类是 `happypass` 定义的响应结果类
+>
 > 该类有两个子类，分别表示请求的成功与失败:
+>
 > - ErrorPassResponse: 表示请求失败
+>
 > - SuccessPassResponse: 表示请求成功
 
 正常情况下，拦截器的工作应该如下
 > pass request : E -> D -> C -> B -> A -> BusinessPassInterceptor
+>
 > return response : BusinessPassInterceptor -> A -> B -> C -> D -> E
 
 上述完成了一次拦截工作，`Request` 的处理和 `Response` 的构建都在 `BusinessPassInterceptor` 这个拦截器中完成
 如果在特殊情况下，某个拦截器（假设 B）意图自己完成请求处理，那么整个流程如下:
 
 > pass request : E -> D -> C -> B
+>
 > return response : B -> C -> D -> E
 
 上述在 B 的位置直接拦截，请求并未传递到 `BusinessPassInterceptor`，所以 Request 的处理和 `Response` 的构建都应由 B 完成
@@ -202,7 +207,9 @@ block www.baidu.com request
 在需要发送流数据的请求中（比如 `POST` 请求），必须传递一个 `body` 作为请求 body:
 
 > body 参数有两种选择:
+>
 > 1. 某种类型数据。该类型数据会经过编码器层层编码，最终转换为 `List<int>` 类型的 byte 数据（如果通过编码器转换的最终数据不为 `List<int>`，则会抛出异常中断请求）
+>
 > 2. `RequestBody` 子类
 
 **`RequestBody` 子类会按照一定的规则提供请求数据，具体可以参考相关示例。**
@@ -334,4 +341,5 @@ request.setCookieManager(MemoryCacheCookieManager());
 如果您在使用的过程中有更好的想法，或者发现什么问题，都可以联系我，共同进行交流:
 
 QQ: 1152564696
+
 Mail: 1152564696@qq.com
