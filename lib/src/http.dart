@@ -58,6 +58,10 @@ typedef RequestConfigCallback = void Function(Request request);
 class Request extends _BaseRequest {
   Request._();
 
+  /// 表示当前是否处于 `debug` 模式
+  /// 该值为 `true` 时，会打印请求遇到的一些不合逻辑，但不会导致请求中断的信息
+  static bool DEBUG = false;
+
   /// 构造请求方法
   static Request construct() {
     return Request._();
@@ -96,8 +100,18 @@ class Request extends _BaseRequest {
   /// 这个标志取决于拼接 Url 地址时是否追加 `?`
   bool _hasUrlParams = false;
 
+
   /// 存放请求地址 Url
   String _url;
+
+  /// 判断 Url 是否发生变化，需要重新解析 [_resolveUrl]
+  /// 与 [_resolveUrl] 组合使用
+  bool _needResolved = true;
+
+  /// 存放解析过的 Url
+  /// 每次 url 发生变化时，该值会重置为 null，下次使用时重新生成
+  /// * 解析过程需要一些计算操作，这样的做的目的是为了缓存当前 url 对应的解析结果，优化了效率
+  PassResolveUrl _resolveUrl;
 
   /// 存放请求方法
   RequestMethod _requestMethod;

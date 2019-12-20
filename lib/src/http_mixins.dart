@@ -15,6 +15,7 @@ mixin _RequestMixinBase<ReturnType> implements _RequestOperatorMixBase {
 /// 请求 id 配置混合
 /// 用于配置 Request id
 mixin _RequestIdBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+
   /// 设置请求 id 方法
   /// 为当前请求设置 id
   /// * 请求 id 可以在任何时候设置
@@ -129,6 +130,8 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
   ReturnType setUrl(String url) {
     if (_buildRequest.checkExecutingStatus) {
       _buildRequest._url = url;
+      // Url 发生变化，需要重新解析
+      _buildRequest._needResolved = true;
     }
     return _returnObj;
   }
@@ -137,6 +140,8 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
   ReturnType addPath(String path) {
     if (_buildRequest.checkExecutingStatus) {
       _buildRequest._url += path;
+      // Url 发生变化，需要重新解析
+      _buildRequest._needResolved = true;
     }
     return _returnObj;
   }
@@ -155,6 +160,8 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
           _buildRequest._url += "&";
         }
         _buildRequest._url += "$key=$realValue";
+        // Url 发生变化，需要重新解析
+        _buildRequest._needResolved = true;
         _buildRequest._hasUrlParams = true;
       }
     }
@@ -522,7 +529,13 @@ mixin _RequestUrlGetter implements _RequestOperatorMixBase {
   String getUrl() => _buildRequest._url;
 
   /// 获取 Url 转换过的 HttpUrl 对象
-  PassHttpUrl getHttpUrl() => PassHttpUtils.resolveUrl(_buildRequest._url);
+  PassResolveUrl getResolverUrl() {
+    if (_buildRequest._needResolved) {
+      _buildRequest._needResolved = false;
+      _buildRequest._resolveUrl = PassHttpUtils.resolveUrl(_buildRequest._url);
+    }
+    return _buildRequest._resolveUrl;
+  }
 }
 
 /// 获取请求 Url 配置混合
@@ -866,7 +879,9 @@ mixin _ResponseDataUpdate implements _RequestOperatorMixBase {
   void notifyResponseDataUpdate(int length, {int totalLength = -1}) {
     // 除非总长度总长度未知，否则接收的数据长度不应超过总长度
     if (length > totalLength && totalLength != -1) {
-      throw Exception("recv length over total length");
+      if(Request.DEBUG) {
+        print("[WARN] ${_buildRequest.getUrl()}: recv length over total length!");
+      }
     }
 
     _buildRequest._responseDataUpdateList?.forEach((callback) {

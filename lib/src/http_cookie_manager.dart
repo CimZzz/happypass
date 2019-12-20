@@ -4,10 +4,10 @@ part of 'http.dart';
 /// 用来读取与存储请求中的 Cookie 信息
 abstract class CookieManager {
   /// 根据 HttpUrl 取得 Cookie List
-  List<Cookie> getCookies(PassHttpUrl url);
+  List<Cookie> getCookies(PassResolveUrl url);
 
   /// 储存对应 HttpUrl 下的 Cookie List
-  void storeCookies(PassHttpUrl url, List<Cookie> cookieList);
+  void storeCookies(PassResolveUrl url, List<Cookie> cookieList);
 }
 
 /// 内存缓存 Cookie 管理器
@@ -17,12 +17,12 @@ class MemoryCacheCookieManager extends CookieManager {
   static Map<String, Map<String, Cookie>> memoryCookieMap = Map();
 
   @override
-  List<Cookie> getCookies(PassHttpUrl httpUrl) {
+  List<Cookie> getCookies(PassResolveUrl httpUrl) {
     return memoryCookieMap[httpUrl.host]?.values?.toList();
   }
 
   @override
-  void storeCookies(PassHttpUrl httpUrl, List<Cookie> cookieList) {
+  void storeCookies(PassResolveUrl httpUrl, List<Cookie> cookieList) {
     final oldCookieMap = memoryCookieMap[httpUrl.host];
     if (oldCookieMap != null) {
       cookieList.forEach((cookie) {

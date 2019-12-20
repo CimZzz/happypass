@@ -48,4 +48,6 @@
 ## 1.0.8
 
 - 重命名 HttpUtils -> PassHttpUtils
-- 重命名 HttpUrl -> PassHttpUrl
+- 重命名 HttpUrl -> PassResolveUrl
+- 新增 MockClientPassInterceptor，可以拦截客户端请求，返回模拟结果
+- 新增 DEBUG 字段，用来打印不合逻辑的错误信息

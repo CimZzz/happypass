@@ -191,7 +191,7 @@ class PassInterceptorChain {
 abstract class PassInterceptor {
   const PassInterceptor();
 
-  Future<PassResponse> intercept(PassInterceptorChain chain);
+  FutureOr<PassResponse> intercept(PassInterceptorChain chain);
 }
 
 /// 打印请求 Url 拦截器
@@ -199,7 +199,7 @@ class LogUrlInterceptor extends PassInterceptor {
   const LogUrlInterceptor();
 
   @override
-  Future<PassResponse> intercept(PassInterceptorChain chain) {
+  FutureOr<PassResponse> intercept(PassInterceptorChain chain) {
     print("current request url : " + chain.modifier.getUrl());
     return chain.waitResponse();
   }
@@ -217,7 +217,7 @@ class SimplePassInterceptor extends PassInterceptor {
   final SimplePassInterceptorCallback _callback;
 
   @override
-  Future<PassResponse> intercept(PassInterceptorChain chain) => _callback(chain);
+  FutureOr<PassResponse> intercept(PassInterceptorChain chain) => _callback(chain);
 }
 
 /// 业务逻辑拦截器
@@ -226,7 +226,7 @@ class BusinessPassInterceptor extends PassInterceptor {
   const BusinessPassInterceptor();
 
   @override
-  Future<PassResponse> intercept(PassInterceptorChain chain) async {
+  FutureOr<PassResponse> intercept(PassInterceptorChain chain) async {
     return await chain.requestForPassResponse();
   }
 }

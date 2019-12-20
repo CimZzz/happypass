@@ -56,5 +56,9 @@
 
     本示例演示了如何使用 `StreamDataBody`  流数据。
     
+- [扩展 - 使用 MockClientPassInterceptor 进行本地模拟请求](example15.dart)
+
+    本示例演示了如何使用 `MockClientPassInterceptor` 进行离线本地测试。`MockClientPassInterceptor` 可以根据请求 Url 拦截请求，直接返回预设好的响应结果，整个过程是离线的，并且无须与服务器进行交互。
+    
     
     

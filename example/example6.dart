@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:isolate';
 import 'package:happypass/happypass.dart';
 
 /// 拦截器是 `happypass` 的核心，全部的请求逻辑都是由末端拦截器 [BusinessPassInterceptor] 进行处理
@@ -8,7 +6,7 @@ void main() async {
   // 在详细介绍之前，先看一个简单的拦截器例子
   // 为了方便演示，我们采用 [SimplePassInterceptor] 类，只需传递回调闭包即可实现拦截的功能
   final interceptor = SimplePassInterceptor((chain) async {
-    final httpUrl = chain.modifier.getHttpUrl();
+    final httpUrl = chain.modifier.getResolverUrl();
     if (httpUrl != null && httpUrl.host == "www.baidu.com") {
       return ErrorPassResponse(msg: "block www.baidu.com request");
     }
