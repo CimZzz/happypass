@@ -8,12 +8,12 @@ happy pass,pass happy to everybody!
 
 ### 快速集成
 
-当前最新版本为: 1.0.7
+当前最新版本为: 1.0.8
 
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^1.0.7
+  happypass: ^1.0.8
 ```
 
 [github](https://github.com/CimZzz/happypass)
@@ -28,6 +28,27 @@ https://github.com/CimZzz/happypass
 能够快速上手使用。
 
 [示例目录](https://github.com/CimZzz/happypass/blob/master/example)
+
+### 1.0.8 最新特性 - 模拟请求拦截器
+
+`happypass` 支持请求模拟拦截，让开发者在离线状态或者后台功能尚未开发完善时返回模拟结果，保证开发逻辑的完整性，而这一切仅仅需要配置一个 `MockClientPassInterceptor` 即可实现:
+
+```dart
+final request = Request.construct();
+request.addFirstInterceptor(MockClientPassInterceptor((builder) => {
+    "www.baidu.com": builder.mock(
+        get: [
+            builder.doDirectly(() => SuccessPassResponse(body: "mocked!"))
+        ]
+    )
+}));
+```
+
+上述配置了一个 `MockClientPassInterceptor`，将全部导向 `www.baidu.com` 的 `GET` 请求全部拦截，并返回一个指定的响应结果。
+
+下面的动态图能更直观的说明这一点:
+
+![mock_demo](mock_demo.gif)
 
 ### 构建一个请求 (Request)
 
