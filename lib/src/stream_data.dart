@@ -12,14 +12,14 @@ class StreamDataBody extends RequestBody {
 	/// 默认类型为 `application/octet-stream`
 	final String streamContentType;
 
-	/// 流
+	/// 数据流
 	final Stream _stream;
 
 	@override
-	String get contentType => this.streamContentType ?? 'application/octet-stream';
+	String get contentType => streamContentType ?? 'application/octet-stream';
 
 	@override
 	Stream provideBodyData() {
-		return this._stream;
+		return _stream;
 	}
 }

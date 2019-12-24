@@ -1,5 +1,14 @@
 part of 'http.dart';
 
+
+typedef HttpClientBuilder = HttpClient Function(ChainRequestModifier modifier);
+
+typedef HttpReqBuilder = Future<HttpClientRequest> Function(HttpClient client, ChainRequestModifier modifier);
+
+typedef HttpReqInfoBuilder = Future<PassResponse> Function(HttpClientRequest httpReq, ChainRequestModifier modifier);
+
+typedef ResponseBuilder = Future<PassResponse> Function(HttpClientRequest httpReq, ChainRequestModifier modifier);
+
 /// 拦截器处理链
 /// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
 /// 拦截器采取的方式是首位插入，所以最先添加的拦截器最后执行
@@ -63,13 +72,13 @@ class PassInterceptorChain {
 		}
 		_currentIdx = idx;
 		final currentInterceptor = _interceptors[idx];
-		PassResponse response = await currentInterceptor.intercept(this);
+		final response = await currentInterceptor.intercept(this);
 		return response;
 	}
 
 	/// 获取拦截链请求修改器
 	/// 可以在拦截器中修改请求的大部分参数，直到有 `PassResponse` 返回
-	ChainRequestModifier get modifier => this._chainRequestModifier;
+	ChainRequestModifier get modifier => _chainRequestModifier;
 
 	/// 等待其他拦截器返回 `Response`
 	Future<PassResponse> waitResponse() async {
@@ -87,20 +96,20 @@ class PassInterceptorChain {
 
 		/// HttpClient 构造器
 		/// 可以自定义 HttpClient 的构造方式
-		HttpClient httpClientBuilder(ChainRequestModifier modifier),
+		HttpClientBuilder httpClientBuilder,
 
 		/// HttpClientRequest 构造器
 		/// 可以自定义 HttpClientRequest 的构造方式
-		Future<HttpClientRequest> httpReqBuilder(HttpClient client, ChainRequestModifier modifier),
+		HttpReqBuilder httpReqBuilder,
 
 		/// HttpClientRequest 消息配置构造
 		/// 用于配置请求头，发送请求 Body
 		/// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
-		Future<PassResponse> httpReqInfoBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier),
+		HttpReqInfoBuilder httpReqInfoBuilder,
 
 		/// Response Body 构造器
 		/// 可以自行读取响应数据并对其修改，视为最终返回数据
-		Future<PassResponse> responseBuilder(HttpClientRequest httpReq, ChainRequestModifier modifier)}) async {
+		ResponseBuilder responseBuilder}) async {
 		HttpClient client;
 		HttpClientRequest httpReq;
 		try {

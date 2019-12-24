@@ -29,7 +29,7 @@ class Byte2Utf8StringDecoder extends HttpMessageDecoder {
 	@override
 	dynamic decode(dynamic message) {
 		if (message is List<int>) {
-			return utf8.decode(message, allowMalformed: this.isAllowMalformed);
+			return utf8.decode(message, allowMalformed: isAllowMalformed);
 		}
 
 		return message;

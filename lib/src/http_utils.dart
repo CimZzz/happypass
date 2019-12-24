@@ -72,7 +72,7 @@ dynamic _resolveProtocolConcat(String concat, String c, bool isLastChar) {
 		return _stopResolveObj;
 	}
 
-	String newConcat = concat + c;
+	final newConcat = concat + c;
 	if (newConcat.length == 3) {
 		if (newConcat == '://') {
 			return const _ResolveResult('://', false);
@@ -157,7 +157,7 @@ dynamic _resolvePath(String concat, String c, bool isLastChar) {
 class PassHttpUtils {
 	PassHttpUtils._();
 
-	static List<_ResolveCallback> _resolveCallbackList = [_resolveProtocol, _resolveProtocolConcat, _resolveHost, _resolvePort, _resolvePath];
+	static final List<_ResolveCallback> _resolveCallbackList = [_resolveProtocol, _resolveProtocolConcat, _resolveHost, _resolvePort, _resolvePath];
 
 	/// 根据 Url 获取其组成信息
 	/// 返回 HttpUrl 来承载这些信息
@@ -167,19 +167,19 @@ class PassHttpUtils {
 				return null;
 			}
 
-			int urlLength = url.length;
-			int callbackIdx = 0;
-			String concatStr = '';
+			final urlLength = url.length;
+			var callbackIdx = 0;
+			var concatStr = '';
 			List<String> resultList;
-			_ResolveCallback callback = _resolveCallbackList[callbackIdx++];
-			for (int i = 0; i <= urlLength; i++) {
-				bool isEnd = i == urlLength;
+			var callback = _resolveCallbackList[callbackIdx++];
+			for (var i = 0; i <= urlLength; i++) {
+				final isEnd = i == urlLength;
 				final childStr = isEnd ? '' : url[i];
 				final result = callback(concatStr ?? '', childStr, isEnd);
 				if (result is String) {
 					concatStr = result;
 				} else if (result is _ResolveResult) {
-					resultList ??= List();
+					resultList ??= [];
 					resultList.add(result.result);
 					concatStr = null;
 					if (callbackIdx == _resolveCallbackList.length) {
@@ -207,8 +207,8 @@ class PassHttpUtils {
 				return null;
 			}
 
-			String hostStr = resultList[2];
-			String domainStr = hostStr;
+			final hostStr = resultList[2];
+			var domainStr = hostStr;
 			final domainEndPoint = domainStr.lastIndexOf('.');
 			if (domainEndPoint == -1) {
 				return null;
@@ -218,7 +218,7 @@ class PassHttpUtils {
 				domainStr = domainStr.substring(domainStartPoint + 1);
 			}
 
-			String portStr = resultList[3];
+			final portStr = resultList[3];
 			return PassResolveUrl(url: url,
 				protocol: resultList[0],
 				host: hostStr,

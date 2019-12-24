@@ -10,7 +10,7 @@ class PassHttpProxy {
 
 	@override
 	bool operator ==(other) {
-		return other is PassHttpProxy && other.host == this.host && other.port == this.port;
+		return other is PassHttpProxy && other.host == host && other.port == port;
 	}
 
 	@override

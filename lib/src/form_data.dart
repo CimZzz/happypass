@@ -32,7 +32,7 @@ class FormDataBody extends RequestBody {
 			return this;
 		}
 
-		_bodyMap ??= Map();
+		_bodyMap ??= {};
 		_bodyMap[Uri.encodeComponent(key)] = Uri.encodeComponent(value.toString());
 
 		return this;
@@ -56,8 +56,8 @@ class FormDataBody extends RequestBody {
 		}
 		_bodyMap = null;
 
-		String bodyStr = '';
-		bool isFirst = true;
+		var bodyStr = '';
+		var isFirst = true;
 		bodyMap.forEach((String key, String value) {
 			if (isFirst) {
 				isFirst = false;

@@ -74,9 +74,7 @@ String _getDefaultContentType(String fileName) {
 
 /// Multipart 每一个子数据
 class MultiData {
-	MultiData({this.name, this.data, this.fileName, this.contentType})
-		: assert(name != null),
-			assert(data != null);
+	MultiData({this.name, this.data, this.fileName, this.contentType});
 
 	final String name;
 	final Object data;
@@ -107,7 +105,7 @@ class MultipartDataBody extends RequestBody {
 			return this;
 		}
 
-		_multiDataList ??= List();
+		_multiDataList ??= [];
 		_multiDataList.add(data);
 		return this;
 	}
@@ -144,9 +142,9 @@ class MultipartDataBody extends RequestBody {
 		}
 
 		final length = multiDataList.length;
-		for (int i = 0; i < length; i++) {
+		for (var i = 0; i < length; i++) {
 			final multiData = multiDataList[i];
-			String contentHeader = '--$_multipartBoundary\r\nContent-Disposition: form-data; name=\'${multiData.name}\'';
+			var contentHeader = '--$_multipartBoundary\r\nContent-Disposition: form-data; name=\'${multiData.name}\'';
 			if (multiData.fileName != null) {
 				contentHeader += '; filename=\'${multiData.fileName}\'';
 			}

@@ -98,14 +98,14 @@ class Request extends _BaseRequest {
 
 	/// 判断是否已经存在 Url 参数
 	/// 这个标志取决于拼接 Url 地址时是否追加 `?`
-	bool _hasUrlParams = false;
+	bool _hasUrlParams;
 
 	/// 存放请求地址 Url
 	String _url;
 
 	/// 判断 Url 是否发生变化，需要重新解析 [_resolveUrl]
 	/// 与 [_resolveUrl] 组合使用
-	bool _needResolved = true;
+	bool _needResolved;
 
 	/// 存放解析过的 Url
 	/// 每次 url 发生变化时，该值会重置为 null，下次使用时重新生成
@@ -180,26 +180,26 @@ class Request extends _BaseRequest {
 	/// 该方法只能由 [RequestPrototype.spawn] 方法调用。
 	Request _clone() {
 		final cloneObj = Request._();
-		cloneObj._runProxy = this._runProxy;
-		if (this._passInterceptorList != null) {
-			cloneObj._passInterceptorList = List.from(this._passInterceptorList);
+		cloneObj._runProxy = _runProxy;
+		if (_passInterceptorList != null) {
+			cloneObj._passInterceptorList = List.from(_passInterceptorList);
 		}
-		if (this._headerMap != null) {
-			cloneObj._headerMap = Map.from(this._headerMap);
+		if (_headerMap != null) {
+			cloneObj._headerMap = Map.from(_headerMap);
 		}
-		cloneObj._url = this._url;
-		cloneObj._requestMethod = this._requestMethod;
-		cloneObj._body = this._body;
-		if (this._encoderList != null) {
-			cloneObj._encoderList = List.from(this._encoderList);
+		cloneObj._url = _url;
+		cloneObj._requestMethod = _requestMethod;
+		cloneObj._body = _body;
+		if (_encoderList != null) {
+			cloneObj._encoderList = List.from(_encoderList);
 		}
-		if (this._decoderList != null) {
-			cloneObj._decoderList = List.from(this._decoderList);
+		if (_decoderList != null) {
+			cloneObj._decoderList = List.from(_decoderList);
 		}
-		cloneObj._cookieManager = this._cookieManager;
+		cloneObj._cookieManager = _cookieManager;
 
-		if (this._httpProxyList != null) {
-			cloneObj._httpProxyList = List.from(this._httpProxyList);
+		if (_httpProxyList != null) {
+			cloneObj._httpProxyList = List.from(_httpProxyList);
 		}
 
 		cloneObj._totalTimeout = _totalTimeout;
@@ -252,7 +252,9 @@ class Request extends _BaseRequest {
 		RequestConfigCallback configCallback,
 	}) {
 		assert(url != null || path != null || prototype != null);
-		assert(body != null);
+		if(body == null) {
+			return null;
+		}
 		final request = prototype?.spawn() ?? Request.construct();
 		if (url != null) {
 			request.setUrl(url);
@@ -273,9 +275,9 @@ class Request extends _BaseRequest {
 /// [RequestPrototype.spawn] 方法可以快速生成配置好的请求参数
 /// [RequestPrototype.clone] 方法可以复制一个相同配置的新的请求原型对象
 class RequestPrototype extends _BaseRequestPrototype<RequestPrototype> {
-	RequestPrototype() : this._prototype = Request._();
+	RequestPrototype() : _prototype = Request._();
 
-	RequestPrototype._fork(Request request) : this._prototype = request._clone();
+	RequestPrototype._fork(Request request) : _prototype = request._clone();
 
 	final Request _prototype;
 

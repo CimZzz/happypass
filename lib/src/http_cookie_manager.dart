@@ -14,7 +14,7 @@ abstract class CookieManager {
 /// 将对应的 Cookie 保存在内存中
 /// 需要注意的是，本 Cookie 管理器中缓存的 Cookie 全局共享
 class MemoryCacheCookieManager extends CookieManager {
-	static Map<String, Map<String, Cookie>> memoryCookieMap = Map();
+	static final memoryCookieMap = <String, Map<String, Cookie>>{};
 
 	@override
 	List<Cookie> getCookies(PassResolveUrl httpUrl) {
@@ -29,7 +29,7 @@ class MemoryCacheCookieManager extends CookieManager {
 				oldCookieMap[cookie.name] = cookie;
 			});
 		} else {
-			Map<String, Cookie> cookieMap = Map();
+			final cookieMap = <String, Cookie>{};
 			cookieList.forEach((cookie) {
 				cookieMap[cookie.name] = cookie;
 			});

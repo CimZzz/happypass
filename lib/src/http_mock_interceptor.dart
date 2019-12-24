@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:happypass/happypass.dart';
 
+/// 模拟拦截回调的构造器
+typedef MockBuilderCallback = Map<String, dynamic> Function(MockClientBuilder builder);
+
 /// 请求模拟拦截回调，直接返回最终结果
 typedef _MockClientRequestCallback = FutureOr<PassResponse> Function();
 
@@ -58,7 +61,7 @@ class MockClientBuilder {
 		if (get == null && post == null && all == null) {
 			return null;
 		}
-		Map<String, dynamic> map = Map();
+		final map = <String, dynamic>{};
 		if (get != null) {
 			map['\'get\''] = get;
 		}
@@ -104,17 +107,17 @@ class MockClientHandler {
 	/// 使用 Future<PassResponse> 来设置模拟响应结果
 	/// * 即使最终 `Future` 返回 `null`，也视为拦截成功
 	void hold(FutureOr<PassResponse> passResponse) {
-		this._result ??= passResponse;
+		_result ??= passResponse;
 	}
 
 	/// 模拟请求成功的响应结果
 	void success({dynamic dataBody}) {
-		this._result ??= SuccessPassResponse(body: dataBody);
+		_result ??= SuccessPassResponse(body: dataBody);
 	}
 
 	/// 模拟请求失败的响应结果
 	void error({String msg, dynamic error, StackTrace stacktrace}) {
-		this._result ??= ErrorPassResponse(msg: msg, error: error, stacktrace: stacktrace);
+		_result ??= ErrorPassResponse(msg: msg, error: error, stacktrace: stacktrace);
 	}
 }
 
@@ -184,7 +187,7 @@ class MockClientPassInterceptor extends PassInterceptor {
 	/// * 使用 `builder` 可以快速并正确地配置模拟拦截回调，而不需要显式声明回调参数类型
 	///
 	/// * 配置路径暂时不支持正则匹配
-	MockClientPassInterceptor(Map<String, dynamic> mockBuilderCallback(MockClientBuilder builder)) {
+	MockClientPassInterceptor(MockBuilderCallback mockBuilderCallback) {
 		final buildMap = mockBuilderCallback(const MockClientBuilder());
 		if (buildMap == null) {
 			return;
@@ -193,7 +196,7 @@ class MockClientPassInterceptor extends PassInterceptor {
 	}
 
 	/// 可以根据多个构造回调生成模拟请求拦截器
-	MockClientPassInterceptor.multi(List<Map<String, dynamic> Function(MockClientBuilder builder)> list) {
+	MockClientPassInterceptor.multi(List<MockBuilderCallback> list) {
 		list?.forEach((mockBuilderCallback) {
 			final buildMap = mockBuilderCallback(const MockClientBuilder());
 			if (buildMap == null) {
@@ -223,8 +226,8 @@ class MockClientPassInterceptor extends PassInterceptor {
 					default:
 						return;
 				}
-				_mockMap ??= Map();
-				final callbackList = _mockMap.putIfAbsent(urlPrefix, () => List());
+				_mockMap ??= {};
+				final callbackList = _mockMap.putIfAbsent(urlPrefix, () => []);
 				value.forEach((callback) {
 					callbackList.add(_MockClientEntry(callback, limitRequestMethod));
 				});
@@ -244,7 +247,7 @@ class MockClientPassInterceptor extends PassInterceptor {
 
 		try {
 			if (_mockMap != null) {
-				final hostAndPath = '${resolveUrl.host}${resolveUrl.path == null ? '' : resolveUrl.path}';
+				final hostAndPath = '${resolveUrl.host}${resolveUrl.path ?? ''}';
 				final protocolAndHostAndPath = '${resolveUrl.protocol}://$hostAndPath';
 				final entryList = _mockMap[hostAndPath] ?? _mockMap[protocolAndHostAndPath];
 				if (entryList != null) {

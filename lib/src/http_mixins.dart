@@ -10,6 +10,15 @@ mixin _RequestMixinBase<ReturnType> implements _RequestOperatorMixBase {
 	ReturnType get _returnObj;
 }
 
+/// for-each 回调
+typedef ForeachCallback<T> = bool Function(T data);
+
+/// 请求头部 for-each 回调
+typedef HttpHeaderForeachCallback = void Function(String key, String value);
+
+/// Future 构造回调
+typedef FutureBuilder<T> = Future<T> Function();
+
 /*配置 Mixin 混合*/
 
 /// 请求 id 配置混合
@@ -150,7 +159,7 @@ mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 			if (key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
 				final realValue = useEncode ? Uri.encodeComponent('value') : value;
 
-				if (checkFirstParams && !_buildRequest._hasUrlParams) {
+				if (checkFirstParams && _buildRequest._hasUrlParams == true) {
 					_buildRequest._url += '?';
 				} else {
 					_buildRequest._url += '&';
@@ -240,7 +249,7 @@ mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 
 	/// 遍历编码器
 	/// 返回 false，中断遍历
-	void forEachEncoder(bool callback(HttpMessageEncoder encoder)) {
+	void forEachEncoder(ForeachCallback<HttpMessageEncoder> callback) {
 		if (_buildRequest._encoderList != null) {
 			var count = _buildRequest._encoderList.length;
 			for (var i = 0; i < count; i++) {
@@ -289,10 +298,10 @@ mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 
 	/// 遍历解码器
 	/// 返回 false，中断遍历
-	void forEachDecoder(bool callback(HttpMessageDecoder encoder)) {
+	void forEachDecoder(ForeachCallback<HttpMessageDecoder> callback) {
 		if (_buildRequest._decoderList != null) {
-			int count = _buildRequest._decoderList.length;
-			for (int i = 0; i < count; i++) {
+			final count = _buildRequest._decoderList.length;
+			for (var i = 0; i < count; i++) {
 				final decoder = _buildRequest._decoderList[i];
 				if (!callback(decoder)) {
 					break;
@@ -370,13 +379,13 @@ mixin _RequestResponseDataReceiverBuilder<ReturnType> implements _RequestMixinBa
 /// 可以立即中断并返回给定的响应结果
 mixin _RequestCloserBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	Set<RequestCloser> get _requestClosers {
-		return this._buildRequest._requestCloserSet ??= Set();
+		return _buildRequest._requestCloserSet ??= <RequestCloser>{};
 	}
 
 	/// 添加请求中断器
 	ReturnType addRequestCloser(RequestCloser requestCloser) {
 		if (_buildRequest.checkExecutingStatus) {
-			this._buildRequest._requestClosers.add(requestCloser);
+			_buildRequest._requestClosers.add(requestCloser);
 		}
 		return _returnObj;
 	}
@@ -384,7 +393,7 @@ mixin _RequestCloserBuilder<ReturnType> implements _RequestMixinBase<ReturnType>
 	/// 清空全部请求中断器
 	ReturnType clearRequestCloser() {
 		if (_buildRequest.checkExecutingStatus) {
-			this._buildRequest._requestCloserSet = null;
+			_buildRequest._requestCloserSet = null;
 		}
 
 		return _returnObj;
@@ -397,7 +406,7 @@ mixin _RequestCookieManagerBuilder<ReturnType> implements _RequestMixinBase<Retu
 	/// 配置请求中断器
 	ReturnType setCookieManager(CookieManager cookieManager) {
 		if (_buildRequest.checkExecutingStatus) {
-			this._buildRequest._cookieManager = cookieManager;
+			_buildRequest._cookieManager = cookieManager;
 		}
 		return _returnObj;
 	}
@@ -407,7 +416,7 @@ mixin _RequestCookieManagerBuilder<ReturnType> implements _RequestMixinBase<Retu
 /// 用来配置请求 Http 代理
 mixin _RequestHttpProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	List<PassHttpProxy> get _httpProxies {
-		return this._buildRequest?._httpProxyList ??= [];
+		return _buildRequest?._httpProxyList ??= [];
 	}
 
 	/// 添加请求 Http 代理
@@ -456,8 +465,8 @@ mixin _RequestTotalTimeoutBuilder<ReturnType> implements _RequestMixinBase<Retur
 	/// 设置请求总超时时间
 	/// 包括拦截器处理耗时也会计算到其中
 	ReturnType setTotalTimeOut(Duration timeOut) {
-		if (this._buildRequest.checkPrepareStatus) {
-			this._buildRequest._totalTimeout = timeOut;
+		if (_buildRequest.checkPrepareStatus) {
+			_buildRequest._totalTimeout = timeOut;
 		}
 		return _returnObj;
 	}
@@ -468,16 +477,16 @@ mixin _RequestTotalTimeoutBuilder<ReturnType> implements _RequestMixinBase<Retur
 mixin _RequestTimeoutBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置连接超时时间
 	ReturnType setConnectTimeOut(Duration timeOut) {
-		if (this._buildRequest.checkExecutingStatus) {
-			this._buildRequest._connectTimeout = timeOut;
+		if (_buildRequest.checkExecutingStatus) {
+			_buildRequest._connectTimeout = timeOut;
 		}
 		return _returnObj;
 	}
 
 	/// 设置读取超时时间
 	ReturnType setReadTimeOut(Duration timeOut) {
-		if (this._buildRequest.checkExecutingStatus) {
-			this._buildRequest._readTimeout = timeOut;
+		if (_buildRequest.checkExecutingStatus) {
+			_buildRequest._readTimeout = timeOut;
 		}
 		return _returnObj;
 	}
@@ -526,7 +535,7 @@ mixin _RequestUrlGetter implements _RequestOperatorMixBase {
 
 	/// 获取 Url 转换过的 HttpUrl 对象
 	PassResolveUrl getResolverUrl() {
-		if (_buildRequest._needResolved) {
+		if (_buildRequest._needResolved != false) {
 			_buildRequest._needResolved = false;
 			_buildRequest._resolveUrl = PassHttpUtils.resolveUrl(_buildRequest._url);
 		}
@@ -546,7 +555,7 @@ mixin _RequestHeaderGetter implements _RequestOperatorMixBase {
 	String getCustomRequestHeader(String key) => key != null ? _buildRequest?._headerMap[key] : null;
 
 	/// 遍历请求头
-	void forEachRequestHeaders(void callback(String key, String value)) {
+	void forEachRequestHeaders(HttpHeaderForeachCallback callback) {
 		if (_buildRequest._headerMap != null) {
 			_buildRequest._headerMap.forEach((String key, String value) => callback(key, value));
 		}
@@ -620,14 +629,12 @@ mixin _RequestEncoder implements _RequestOperatorMixBase, _RequestProxyRunner {
 	static Future<dynamic> _encodeMessage(_EncodeBundle bundle) async {
 		var message = bundle._message;
 
-		int count = bundle._encoderList.length;
-		for (int i = 0; i < count; i++) {
+		final count = bundle._encoderList.length;
+		for (var i = 0; i < count; i++) {
 			final encoder = bundle._encoderList[i];
 			final oldMessage = message;
 			message = encoder.encode(message);
-			if (message == null) {
-				message = oldMessage;
-			}
+			message ??= oldMessage;
 		}
 
 		return message;
@@ -663,10 +670,10 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase, _RequestEncoder {
 
 		if (body is RequestBody) {
 			// 当请求体是 RequestBody 时
-			RequestBody requestBody = body;
-			String contentType = requestBody.contentType;
+			final requestBody = body;
+			final contentType = requestBody.contentType;
 			if (contentType != null) {
-				bool overrideContentType = requestBody.overrideContentType;
+				final overrideContentType = requestBody.overrideContentType;
 				if (overrideContentType == true || httpReq.headers.value('content-type') == null) {
 					httpReq.headers.set('content-type', contentType);
 				}
@@ -728,10 +735,10 @@ mixin _ResponseDecoder implements _RequestOperatorMixBase, _RequestProxyRunner {
 	/// 实际 decode 消息方法
 	static Future<dynamic> _decodeMessage(_DecodeBundle bundle) async {
 		dynamic decoderMessage = bundle._message;
-		List<HttpMessageDecoder> decoders = bundle._decoderList;
+		final decoders = bundle._decoderList;
 
-		int count = decoders.length;
-		for (int i = 0; i < count; i++) {
+		final count = decoders.length;
+		for (var i = 0; i < count; i++) {
 			final decoder = decoders[i];
 			decoderMessage = decoder.decode(decoderMessage);
 			if (decoderMessage == null) {
@@ -768,23 +775,21 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder 
 	Future<PassResponse> analyzeResponse(ChainRequestModifier modifier, {HttpClientRequest httpReq, HttpClientResponse httpResp, bool useDecode = true, bool useProxy = true, bool doNotify = true}) async {
 		// httpReq 和 httpResp 至少有一个不为 null
 		assert(httpReq != null || httpResp != null);
-		if (httpResp == null) {
-			httpResp = await httpReq.close();
-		}
+		httpResp ??= await httpReq.close();
 		// 存储 Cookie
 		modifier.storeCookies(modifier.getUrl(), httpResp.cookies);
 		// 标记当前请求已经执行完成
 		modifier.markRequestExecuted();
-		List<int> responseBody = [];
+		final responseBody = <int>[];
 		if (doNotify) {
 			// 获取当前响应的数据总长度
 			// 如果不存在则置为 -1，表示总长度未知
 			final contentLengthList = httpResp.headers['content-length'];
-			int totalLength = -1;
+			var totalLength = -1;
 			if (contentLengthList?.isNotEmpty == true) {
 				totalLength = int.tryParse(contentLengthList[0]) ?? -1;
 			}
-			int curLength = 0;
+			var curLength = 0;
 			// 接收之前先触发一次空进度通知
 			modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
 			await httpResp.forEach((byteList) {
@@ -818,9 +823,7 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder 
 	Future<PassResponse> analyzeResponseByReceiver(ChainRequestModifier modifier, {HttpClientRequest httpReq, HttpClientResponse httpResp, bool doNotify = true}) async {
 		// httpReq 和 httpResp 至少有一个不为 null
 		assert(httpReq != null || httpResp != null);
-		if (httpResp == null) {
-			httpResp = await httpReq.close();
-		}
+		httpResp ??= await httpReq.close();
 		// 存储 Cookie
 		modifier.storeCookies(modifier.getUrl(), httpResp.cookies);
 		Stream<List<int>> rawByteDataStream;
@@ -830,11 +833,11 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder 
 			// 获取当前响应的数据总长度
 			// 如果不存在则置为 -1，表示总长度未知
 			final contentLengthList = httpResp.headers['content-length'];
-			int totalLength = -1;
+			var totalLength = -1;
 			if (contentLengthList?.isNotEmpty == true) {
 				totalLength = int.tryParse(contentLengthList[0]) ?? -1;
 			}
-			int curLength = 0;
+			var curLength = 0;
 			// 接收之前先触发一次空进度通知
 			modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
 			Stream<List<int>> rawByteStreamWrap(Stream<List<int>> rawStream) async* {
@@ -892,8 +895,8 @@ mixin _ResponseRawDataTransfer implements _RequestOperatorMixBase {
 	/// 调用接收响应原始数据接口，将 Future 直接返回
 	/// 该方法并未在执行代理中执行
 	Future<dynamic> transferRawDataForRawDataReceiver(Stream<List<int>> rawDataStream) {
-		if (this._buildRequest._responseReceiverCallback != null) {
-			return this._buildRequest._responseReceiverCallback(rawDataStream);
+		if (_buildRequest._responseReceiverCallback != null) {
+			return _buildRequest._responseReceiverCallback(rawDataStream);
 		}
 		return null;
 	}
@@ -915,7 +918,7 @@ mixin _RequestClose implements _RequestOperatorMixBase {
 	/// 判断当前请求是否已经结束
 	bool _isClosed = false;
 
-	bool get isClosed => this._isClosed || _finishResponse != null;
+	bool get isClosed => _isClosed || _finishResponse != null;
 
 	/// 用来承载在请求中断的中断结果
 	ResultPassResponse _finishResponse;
@@ -935,11 +938,11 @@ mixin _RequestClose implements _RequestOperatorMixBase {
 
 	/// 用于 `ChainRequestModifier` 首次装配给 `RequestCloser`
 	void _assembleCloser(ChainRequestModifier modifier) {
-		final closerSet = this._buildRequest._requestCloserSet;
+		final closerSet = _buildRequest._requestCloserSet;
 		if (closerSet != null) {
 			for (var closer in closerSet) {
 				closer._assembleModifier(modifier);
-				if (this.isClosed) {
+				if (isClosed) {
 					// 如果请求被某个中断器中断的话，那么将不再访问后续中断器
 					break;
 				}
@@ -965,16 +968,16 @@ mixin _RequestClose implements _RequestOperatorMixBase {
 		_realBusinessCompleter = Completer();
 		_innerCompleter = Completer();
 		_innerSubscription = _realBusinessCompleter.future.asStream().listen((data) {
-			this._innerCompleter.complete(data);
+			_innerCompleter.complete(data);
 		});
 		_realBusinessCompleter.complete(realFuture);
-		return this._innerCompleter.future;
+		return _innerCompleter.future;
 	}
 
 	/// 装配 HttpClient，用来强制中断逻辑
 	void assembleHttpClient(HttpClient client) {
-		this._client = client;
-		if (this._isClosed) {
+		_client = client;
+		if (_isClosed) {
 			client.close(force: true);
 		}
 	}
@@ -982,8 +985,8 @@ mixin _RequestClose implements _RequestOperatorMixBase {
 	/// 强制中断当前请求
 	/// - finishResponse: 中断请求所返回的最终响应结果
 	void close({ResultPassResponse finishResponse = const ErrorPassResponse(msg: 'request interrupted!')}) {
-		this._client?.close(force: true);
-		this._innerCompleter?.complete(finishResponse);
+		_client?.close(force: true);
+		_innerCompleter?.complete(finishResponse);
 		// 因为 `Completer` 完成不是立即生效的，如果在同一时间内多个中断器同时中断请求
 		// 会导致多次完成 `Completer` 而引起异常，所以需要在第一次执行中断逻辑后立即回收
 		// `Completer` 相关的资源，防止该异常的发生
@@ -1047,9 +1050,7 @@ mixin _RequestProxyGetter implements _RequestOperatorMixBase {
 		if (_buildRequest._httpProxyList != null) {
 			_buildRequest._httpProxyList.forEach((proxy) {
 				if (proxy.host == host) {
-					if (list == null) {
-						list = [];
-					}
+					list ??= [];
 					list.add(proxy);
 				}
 			});
@@ -1064,9 +1065,15 @@ mixin _RequestProxyGetter implements _RequestOperatorMixBase {
 	}
 
 	/// 遍历请求 Http 代理
-	void forEachPassHttpProxies(void callback(PassHttpProxy proxy)) {
+	void forEachPassHttpProxies(ForeachCallback<PassHttpProxy> callback) {
 		if (_buildRequest._httpProxyList != null) {
-			_buildRequest._httpProxyList.forEach(callback);
+			final proxyList = _buildRequest._httpProxyList;
+			final count = proxyList.length;
+			for (var i = 0; i < count; i ++) {
+				if (!callback(proxyList[i])) {
+					break;
+				}
+			}
 		}
 	}
 }
@@ -1077,7 +1084,7 @@ mixin _RequestHttpProxyFiller implements _RequestOperatorMixBase {
 	/// 为 Http Client 填充请求代理
 	void fillRequestHttpProxy(HttpClient client) {
 		if (_buildRequest._httpProxyList != null) {
-			String proxyStr = 'DIRECT';
+			var proxyStr = 'DIRECT';
 			_buildRequest._httpProxyList.forEach((proxy) {
 				proxyStr = 'PROXY ${proxy.host}:${proxy.port}; ' + proxyStr;
 			});
@@ -1178,23 +1185,23 @@ mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
 	/// 在连接超时时间内完成指定操作，如果超时则抛出异常
 	Future<T> runInConnectTimeout<T>(Future<T> call) {
 		if (_buildRequest._connectTimeout != null) {
-			Completer<T> completer = Completer();
-			call.timeout(_buildRequest._connectTimeout, onTimeout: () {
+			final completer = Completer<T>();
+			call = call.timeout(_buildRequest._connectTimeout, onTimeout: () {
 				if (!completer.isCompleted) {
 					completer.completeError('connect time out');
 				}
 				return null;
-			})
-				..then((data) {
-					if (!completer.isCompleted) {
-						completer.complete(data);
-					}
-				})
-				..catchError((error, stacktrace) {
-					if (!completer.isCompleted) {
-						completer.completeError(error, stacktrace);
-					}
-				});
+			});
+			call.then((data) {
+				if (!completer.isCompleted) {
+					completer.complete(data);
+				}
+			});
+			call.catchError((error, stacktrace) {
+				if (!completer.isCompleted) {
+					completer.completeError(error, stacktrace);
+				}
+			});
 
 			return completer.future;
 		}
@@ -1204,30 +1211,30 @@ mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
 
 	/// 在连接超时时间内完成指定操作，如果超时则抛出异常
 	/// 以闭包的形式包装
-	Future<T> runInConnectTimeoutByClosure<T>(Future<T> callback()) {
-		return runInConnectTimeout(callback());
+	Future<T> runInConnectTimeoutByClosure<T>(FutureBuilder<T> builder) {
+		return runInConnectTimeout(builder());
 	}
 
 	/// 在读取超时时间内完成指定操作，如果超时则抛出异常
 	Future<T> runInReadTimeout<T>(Future<T> call) {
 		if (_buildRequest._readTimeout != null) {
-			Completer<T> completer = Completer();
-			call.timeout(_buildRequest._readTimeout, onTimeout: () {
+			final completer = Completer<T>();
+			call = call.timeout(_buildRequest._readTimeout, onTimeout: () {
 				if (!completer.isCompleted) {
 					completer.completeError('read time out');
 				}
 				return null;
-			})
-				..then((data) {
-					if (!completer.isCompleted) {
-						completer.complete(data);
-					}
-				})
-				..catchError((error, stacktrace) {
-					if (!completer.isCompleted) {
-						completer.completeError(error, stacktrace);
-					}
-				});
+			});
+			call.then((data) {
+				if (!completer.isCompleted) {
+					completer.complete(data);
+				}
+			});
+			call.catchError((error, stacktrace) {
+				if (!completer.isCompleted) {
+					completer.completeError(error, stacktrace);
+				}
+			});
 
 			return completer.future;
 		}
@@ -1237,8 +1244,8 @@ mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
 
 	/// 在读取超时时间内完成指定操作，如果超时则抛出异常
 	/// 以闭包的形式包装
-	Future<T> runInReadTimeoutByClosure<T>(Future<T> callback()) {
-		return runInReadTimeout(callback());
+	Future<T> runInReadTimeoutByClosure<T>(FutureBuilder<T> builder) {
+		return runInReadTimeout(builder());
 	}
 }
 

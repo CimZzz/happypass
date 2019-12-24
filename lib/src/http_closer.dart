@@ -31,8 +31,8 @@ class RequestCloser {
 		}
 		_isClosed = true;
 		_closeResponse = finishResponse;
-		if (this._modifierSet != null) {
-			this._modifierSet.forEach((modifier) {
+		if (_modifierSet != null) {
+			_modifierSet.forEach((modifier) {
 				modifier.close(finishResponse: _pickFinishResponse(modifier));
 			});
 		}
@@ -54,13 +54,13 @@ class RequestCloser {
 		if (isClosed) {
 			modifier._finishResponse = _pickFinishResponse(modifier);
 		} else {
-			this._modifierSet ??= Set();
-			this._modifierSet.add(modifier);
+			_modifierSet ??= {};
+			_modifierSet.add(modifier);
 		}
 	}
 
 	/// 回收 [ChainRequestModifier] 引用
 	void _finish(ChainRequestModifier modifier) {
-		this._modifierSet?.remove(modifier);
+		_modifierSet?.remove(modifier);
 	}
 }
