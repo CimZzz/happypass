@@ -95,5 +95,6 @@
 ## 1.1.0
 
 - 内部混合分文件定义
-- 
+- `SuccessPassResponse` 和 `ProcessablePassResponse` 支持访问原始请求数据
+- 新增 `HappyPassQuickAccess` 快速完成常用的基本请求
 

@@ -218,10 +218,10 @@ class Request extends _BaseRequest {
 	}
 
 	/// 快速进行一次 GET 请求
-	/// - url: 请求的地址
-	/// - path: 请求的部分路径
-	/// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
-	/// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
+	/// - [url] : 请求的地址
+	/// - [path] : 请求的部分路径
+	/// - [prototype] : 请求原型，如果存在，那么会请求会从该原型分裂而来
+	/// - [configCallback] : 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
 	/// * [url]、[path]、[prototype] 三者不能同时为 `null`
 	static Future<ResultPassResponse> quickGet({
 		String url,
@@ -245,11 +245,11 @@ class Request extends _BaseRequest {
 	}
 
 	/// 快速进行一次 POST 请求
-	/// - url: 请求的地址
-	/// - path: 请求的部分路径
-	/// - body: 请求体，表示 POST 传递的请求数据
-	/// - prototype: 请求原型，如果存在，那么会请求会从该原型分裂而来
-	/// - configCallback: 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
+	/// - [url] : 请求的地址
+	/// - [path] : 请求的部分路径
+	/// - [body] : 请求体，表示 POST 传递的请求数据
+	/// - [prototype] : 请求原型，如果存在，那么会请求会从该原型分裂而来
+	/// - [configCallback] : 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
 	/// * [url]、[path]、[prototype] 三者不能同时为 `null`
 	/// * [body] 不能为 `null`
 	static Future<ResultPassResponse> quickPost({

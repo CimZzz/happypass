@@ -192,9 +192,20 @@ void main() async {
 							final result = await modifier.transferRawDataForRawDataReceiver(rawDataStreamWrap(rawDataStream));
 
 							if (result is PassResponse) {
+								if(result is ProcessablePassResponse) {
+									// * 如果需要响应数据其他信息，你可以这么做
+									result.assembleResponse(httpResponse);
+								}
+								else if(result is SuccessPassResponse) {
+									// * 如果需要响应数据其他信息，你可以这么做
+									result.assembleResponse(httpResponse);
+								}
 								return result;
 							} else {
-								return ProcessablePassResponse(httpResponse, null, result);
+								// * 如果需要响应数据其他信息，你可以这么做
+								final response = ProcessablePassResponse(null, result);
+								response.assembleResponse(httpResponse);
+								return response;
 							}
 						}());
 					} else {
@@ -220,7 +231,10 @@ void main() async {
 							// * 当然，你也可以遍历编码器进行解码，这一切取决你
 							decodeObj = await modifier.decodeMessage(decodeObj, useProxy: true);
 
-							return ProcessablePassResponse(httpResponse, responseBody, decodeObj);
+							// * 如果需要响应数据其他信息，你可以这么做
+							final response = ProcessablePassResponse(responseBody, decodeObj);
+							response.assembleResponse(httpResponse);
+							return response;
 						}());
 					}
 

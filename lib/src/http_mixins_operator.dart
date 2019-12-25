@@ -300,6 +300,12 @@ mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder 
 		final result = await modifier.transferRawDataForRawDataReceiver(rawByteDataStream);
 		
 		if (result is PassResponse) {
+			if(result is ProcessablePassResponse) {
+				result.assembleResponse(httpResp);
+			}
+			else if(result is SuccessPassResponse) {
+				result.assembleResponse(httpResp);
+			}
 			passResponse = result;
 		} else {
 			final processableResponse = ProcessablePassResponse(null, result);

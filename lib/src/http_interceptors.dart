@@ -62,6 +62,7 @@ class PassInterceptorChain {
 		if (response is ProcessablePassResponse) {
 			final successResp = SuccessPassResponse(body: response.body ?? response.bodyData);
 			response.passResponse(successResp);
+			return successResp;
 		}
 
 		return ErrorPassResponse(msg: '无法识别该 Response');
