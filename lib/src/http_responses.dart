@@ -24,19 +24,18 @@ class ErrorPassResponse extends ResultPassResponse {
 }
 
 /// Http 请求成功是返回的响应体
-class SuccessPassResponse extends ResultPassResponse {
+class SuccessPassResponse extends ResultPassResponse with _ResponseMixinBase, _ResponseProxy {
 	SuccessPassResponse({this.body}) : super(true);
 	final dynamic body;
-
+	
 	@override
 	String toString() => '$body';
 }
 
 /// Http 加工的响应体
-class ProcessablePassResponse extends PassResponse {
-	ProcessablePassResponse(this.rawResponse, this.bodyData, this.body);
-
-	final HttpClientResponse rawResponse;
+class ProcessablePassResponse extends PassResponse with _ResponseMixinBase, _ResponseProxy {
+	ProcessablePassResponse(this.bodyData, this.body);
+	
 	final List<int> bodyData;
 	final dynamic body;
 }

@@ -162,11 +162,7 @@ void main() async {
 					// * 为了保证通知响应进度回调消息准确，我们需要取 `HttpClientResponse` 中的 `Content-Length`，
 					// * 作为总的接收数据长度
 					// * 另外，如果响应中没有描述数据长度，那么应该将 `totalLength` 标记为 `-1`，表示总长度未知
-					final contentLengthList = httpResponse.headers['content-length'];
-					int totalLength = -1;
-					if (contentLengthList?.isNotEmpty == true) {
-						totalLength = int.tryParse(contentLengthList[0]) ?? -1;
-					}
+					final totalLength = httpResponse.contentLength;
 					int curLength = 0;
 
 					PassResponse passResponse;

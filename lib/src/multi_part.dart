@@ -73,8 +73,8 @@ String _getDefaultContentType(String fileName) {
 }
 
 /// Multipart 每一个子数据
-class MultiData {
-	MultiData({this.name, this.data, this.fileName, this.contentType});
+class _MultiData {
+	_MultiData({this.name, this.data, this.fileName, this.contentType});
 
 	final String name;
 	final Object data;
@@ -97,10 +97,10 @@ class MultipartDataBody extends RequestBody {
 	String get contentType => 'multipart/form-data; boundary=$_multipartBoundary';
 
 	/// Multipart 数据列表
-	List<MultiData> _multiDataList;
+	List<_MultiData> _multiDataList;
 
 	/// 直接添加 Multipart 数据
-	MultipartDataBody addMultiPartData(MultiData data) {
+	MultipartDataBody addMultiPartData(_MultiData data) {
 		if (data == null) {
 			return this;
 		}
@@ -112,7 +112,7 @@ class MultipartDataBody extends RequestBody {
 
 	/// 添加文本 Multipart 数据
 	MultipartDataBody addMultipartText(String name, String text, {String fileName, String contentType}) {
-		return addMultiPartData(MultiData(name: name, data: text, fileName: fileName, contentType: _getDefaultContentType(fileName)));
+		return addMultiPartData(_MultiData(name: name, data: text, fileName: fileName, contentType: _getDefaultContentType(fileName)));
 	}
 
 	/// 添加文件 Multipart 数据
@@ -126,7 +126,7 @@ class MultipartDataBody extends RequestBody {
 
 	/// 添加流 Multipart 数据
 	MultipartDataBody addMultipartStream(String name, Stream<List<int>> stream, {String fileName, String contentType}) {
-		return addMultiPartData(MultiData(
+		return addMultiPartData(_MultiData(
 			name: name,
 			data: stream,
 			fileName: fileName,

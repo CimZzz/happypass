@@ -14,6 +14,14 @@ part 'http_interceptors.dart';
 
 part 'http_mixins.dart';
 
+part 'http_mixins_builder.dart';
+
+part 'http_mixins_getter.dart';
+
+part 'http_mixins_operator.dart';
+
+part 'http_mixins_response.dart';
+
 part 'http_proxy.dart';
 
 part 'http_responses.dart';
