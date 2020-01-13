@@ -1,10 +1,6 @@
-
 import 'package:happypass/happypass.dart';
 import 'dart:io'
 if (dart.library.html) 'dart:html' as _file;
-
-/// 快速请求处理回调
-typedef RequestConfigCallback = void Function(Request request);
 
 /// `happypass` 快速访问工具类唯一实例
 HappyPassQuickAccess happypass = HappyPassQuickAccess._();

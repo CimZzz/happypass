@@ -98,3 +98,7 @@
 - `SuccessPassResponse` 和 `ProcessablePassResponse` 支持访问原始请求数据
 - 新增 `HappyPassQuickAccess` 快速完成常用的基本请求
 
+## 1.1.1
+- 修复 `HappyPassQuickAccess` 不能外显的问题
+- 优化内存管理
+

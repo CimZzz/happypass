@@ -1,6 +1,6 @@
 name: happypass
 description: a highly liberal http framework! In happypass, you can contorl all of the request process, and re-design anything you need.
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/CimZzz/happypass
 author: wangyanxiong <a1950207@gmail.com>
 

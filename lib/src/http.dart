@@ -299,5 +299,15 @@ class RequestPrototype extends _BaseRequestPrototype<RequestPrototype> {
 	RequestPrototype clone() => RequestPrototype._fork(_prototype);
 
 	/// 根据当前配置生成一个 Request 对象
-	Request spawn() => _prototype._clone();
+	Request spawn() {
+		final request = _prototype._clone();
+		request._needCopyInterceptor = true;
+		request._needCopyEncoderList = true;
+		request._needCopyDecoderList = true;
+		request._needCopyHeaderMap = true;
+		request._needCopyHttpProxyList = true;
+		request._needCopyRequestCloserList = true;
+		request._needCopyResponseDataUpdateList = true;
+		return request;
+	}
 }
