@@ -58,9 +58,6 @@ class MockClientBuilder {
 	/// [all] : 对应全部请求所配置的模拟拦截回调
 	/// [path] : 继续添加子路径
 	Map<String, dynamic> mock({List<Function> get, List<Function> post, List<Function> all, Map<String, dynamic> path}) {
-		if (get == null && post == null && all == null) {
-			return null;
-		}
 		final map = <String, dynamic>{};
 		if (get != null) {
 			map['\'get\''] = get;
@@ -71,11 +68,13 @@ class MockClientBuilder {
 		if (all != null) {
 			map['\'*\''] = all;
 		}
-
 		if (path != null) {
 			map.addAll(path);
 		}
-
+		if(map.length == 0) {
+			return null;
+		}
+		
 		return map;
 	}
 

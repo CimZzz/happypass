@@ -102,3 +102,5 @@
 - 修复 `HappyPassQuickAccess` 不能外显的问题
 - 优化内存管理
 
+## 1.1.2
+- 修复 `MockClientPassInterceptor` 部分情况下无法拦截的问题

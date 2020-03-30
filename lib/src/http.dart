@@ -30,6 +30,8 @@ part 'http_utils.dart';
 
 part 'request_body.dart';
 
+part 'http_interceptor_chain.dart';
+
 /// 请求状态
 /// 1. Prepare 准备状态，在这个阶段中对请求进行一些配置
 /// 2. Executing 执行状态，表示该请求正在执行中，但还没有获得结果
