@@ -104,3 +104,6 @@
 
 ## 1.1.2
 - 修复 `MockClientPassInterceptor` 部分情况下无法拦截的问题
+
+## 1.1.3
+- 修复 `Html` 下载兼容问题

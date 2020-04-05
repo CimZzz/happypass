@@ -55,6 +55,9 @@ void main() async {
 					httpReqInfoBuilder: (HttpClientRequest httpReq, ChainRequestModifier modifier) async {
 						await modifier.fillRequestHeader(httpReq, modifier);
 						await modifier.fillRequestBody(httpReq, modifier);
+						
+						// 如果在此步骤进行拦截，可以返回一个 `PassResponse` 子类对象
+						return null;
 					},
 
 					// Response Body 构造器

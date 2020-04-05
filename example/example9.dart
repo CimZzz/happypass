@@ -165,6 +165,8 @@ void method7() async {
 				return ErrorPassResponse(msg: 'reqeust 3 canceled');
 			case 4:
 				return ErrorPassResponse(msg: 'reqeust 4 canceled');
+			default:
+				return null;
 		}
 	});
 

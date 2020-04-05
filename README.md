@@ -13,7 +13,7 @@ happy pass,pass happy to everybody!
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^1.1.2
+  happypass: ^1.1.3
 ```
 
 [github](https://github.com/CimZzz/happypass)

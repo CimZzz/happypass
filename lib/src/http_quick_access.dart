@@ -1,6 +1,5 @@
-import 'package:happypass/happypass.dart';
-import 'dart:io'
-if (dart.library.html) 'dart:html' as _file;
+import 'http.dart';
+import 'adapter/file.dart';
 
 /// `happypass` 快速访问工具类唯一实例
 HappyPassQuickAccess happypass = HappyPassQuickAccess._();
@@ -59,50 +58,41 @@ class HappyPassQuickAccess {
 	/// 快速下载并保存到指定文件
 	/// - [downloadUrl] : 指定下载的 Url
 	/// - [storePath] : 保存文件的路径
-	/// - [file] : 指定保存的文件
 	/// - [prototype] : 请求原型，如果存在，那么会请求会从该原型分裂而来
 	/// - [configCallback] : 请求配置回调。在执行之前会调用一次该回调，对请求做最后的配置
 	/// * [downloadUrl] 不能为 null
-	/// * [storePath] 和 [file] 不能同时为 null，如果两者都存在，那么 [file] 优先生效
+	/// * [storePath] 不能为 null
 	Future<ResultPassResponse> download({
 		String downloadUrl,
 		String storePath,
-		_file.File file,
 		RequestPrototype prototype,
 		RequestConfigCallback configCallback,
-	}) {
-		if(file == null && storePath == null) {
-			return Future(() => ErrorPassResponse(msg: "保存文件或路径不能为 null"));
+	}) async {
+		final fileWrapper = FileWrapper(storePath);
+		
+		final errMsg = fileWrapper.checkErrMsg();
+		
+		if(errMsg != null) {
+			return ErrorPassResponse(msg: errMsg);
 		}
-
+		
 		final request = prototype?.spawn() ?? Request.construct();
 		if (downloadUrl != null) {
 			request.setUrl(downloadUrl);
 		}
 
-		file = file ?? _file.File(storePath);
-
 		request.setResponseRawDataReceiverCallback((Stream<List<int>> rawData) async {
-			_file.IOSink ioSink;
-			try {
-				ioSink = file.openWrite();
-				await ioSink.addStream(rawData);
-				ioSink.flush();
+			if(await fileWrapper.saveFileData(rawData)) {
 				return SuccessPassResponse(body: "download successed!");
 			}
-			catch(e, stacktrace) {
-				return ErrorPassResponse(msg: "下载文件失败", error: e, stacktrace: stacktrace);
-			}
-			finally {
-				if(ioSink != null) {
-					await ioSink.close();
-				}
+			else {
+				return ErrorPassResponse(msg: "下载文件失败: ${fileWrapper.checkErrMsg() ?? 'null'}");
 			}
 		});
 		if (configCallback != null) {
 			configCallback(request);
 		}
 
-		return request.doRequest();
+		return await request.doRequest();
 	}
 }
