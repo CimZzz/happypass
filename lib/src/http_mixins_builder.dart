@@ -195,6 +195,7 @@ mixin _RequestMethodBuilder<ReturnType> implements _RequestMixinBase<ReturnType>
 	/// 设置 GET 请求
 	ReturnType GET() {
 		if (_buildRequest.checkExecutingStatus) {
+			_buildRequest._customRequestMethod = null;
 			_buildRequest._requestMethod = RequestMethod.GET;
 			_buildRequest._body = null;
 		}
@@ -205,7 +206,19 @@ mixin _RequestMethodBuilder<ReturnType> implements _RequestMixinBase<ReturnType>
 	/// body 不能为 `null`
 	ReturnType POST(dynamic body) {
 		if (_buildRequest.checkExecutingStatus && body != null) {
+			_buildRequest._customRequestMethod = null;
 			_buildRequest._requestMethod = RequestMethod.POST;
+			_buildRequest._body = body;
+		}
+		return _returnObj;
+	}
+	
+	/// 设置自定义请求方法
+	/// 可以选择是否传送 body
+	ReturnType CUSTOM(String method, {dynamic body}) {
+		if (_buildRequest.checkExecutingStatus && body != null) {
+			_buildRequest._customRequestMethod = method;
+			_buildRequest._requestMethod = RequestMethod.CUSTOM;
 			_buildRequest._body = body;
 		}
 		return _returnObj;
@@ -544,4 +557,8 @@ mixin _RequestTimeoutBuilder<ReturnType> implements _RequestMixinBase<ReturnType
 		}
 		return _returnObj;
 	}
+}
+
+mixin _RequestClientBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+
 }

@@ -1,19 +1,27 @@
+import 'dart:html';
 import 'file.dart' as _file;
 
+const kFileBuffSize = 2048;
 
 class FileWrapper implements _file.FileWrapper {
 	
-	FileWrapper(this.filePath);
+	FileWrapper(String filePath): file = null {
+		this._errMsg = 'Unsupport create by file path';
+	}
 	
-	final String filePath;
+	FileWrapper.createByFile(this.file);
+	
+	final File file;
+	
+	String _errMsg;
 	
 	
 	@override
-	String checkErrMsg() => 'Unsupport download in html';
+	String checkErrMsg() => _errMsg;
 	
 	@override
 	String getFilePath() {
-		throw UnsupportedError('Unsupport download');
+		return file?.relativePath ?? '';
 	}
 	
 	@override

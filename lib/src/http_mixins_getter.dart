@@ -16,6 +16,9 @@ mixin _RequestMethodGetter implements _RequestOperatorMixBase {
 	RequestMethod getRequestMethod() {
 		return _buildRequest._requestMethod;
 	}
+	
+	/// 获取自定义的请求方法
+	String getCustomRequestMethod() => _buildRequest._customRequestMethod;
 }
 
 /// 获取请求 Url 配置混合

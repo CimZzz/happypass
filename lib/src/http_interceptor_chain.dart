@@ -1,5 +1,6 @@
 part of 'http.dart';
 
+
 typedef HttpClientBuilder = HttpClient Function(ChainRequestModifier modifier);
 
 typedef HttpReqBuilder = Future<HttpClientRequest> Function(HttpClient client, ChainRequestModifier modifier);
@@ -91,106 +92,7 @@ class PassInterceptorChain {
 	}
 	
 	/// 实际执行 `Request` 获得 `Response`
-	/// 提供了一些可选回调，最大限度满足自定义 Request 的自由
-	/// 默认情况下，在只在编码与解码时使用了执行代理
-	Future<PassResponse> requestForPassResponse({
-		
-		/// HttpClient 构造器
-		/// 可以自定义 HttpClient 的构造方式
-		HttpClientBuilder httpClientBuilder,
-		
-		/// HttpClientRequest 构造器
-		/// 可以自定义 HttpClientRequest 的构造方式
-		HttpReqBuilder httpReqBuilder,
-		
-		/// HttpClientRequest 消息配置构造
-		/// 用于配置请求头，发送请求 Body
-		/// 如果该方法返回了 PassResponse，那么该结果将会直接被当做最终结果返回
-		HttpReqInfoBuilder httpReqInfoBuilder,
-		
-		/// Response Body 构造器
-		/// 可以自行读取响应数据并对其修改，视为最终返回数据
-		ResponseBuilder responseBuilder}) async {
-		HttpClient client;
-		HttpClientRequest httpReq;
-		try {
-			final chainRequestModifier = modifier;
-			if (chainRequestModifier.isClosed) {
-				// 如果请求已经取消，则直接返回 null
-				return null;
-			}
-			
-			if (httpClientBuilder != null) {
-				client = httpClientBuilder(chainRequestModifier);
-			} else {
-				client = HttpClient();
-				// 设置宽松的超时时间，目的是为了由我们接管超时处理逻辑
-				chainRequestModifier.fillLooseTimeout(client);
-			}
-			// 装配 `HttpClient`，保证中断器可以正常中断请求
-			chainRequestModifier.assembleHttpClient(client);
-			// 配置 HTTP 请求代理
-			chainRequestModifier.fillRequestHttpProxy(client);
-			
-			final method = chainRequestModifier.getRequestMethod();
-			
-			// 创建请求对象
-			if (httpReqBuilder != null) {
-				httpReq = await httpReqBuilder(client, chainRequestModifier);
-			} else {
-				final url = chainRequestModifier.getUrl();
-				if (method == RequestMethod.POST) {
-					// 限制在连接超时时间内获取 `HttpClientRequest`
-					httpReq = await chainRequestModifier.runInConnectTimeout(client.postUrl(Uri.parse(url)));
-				} else {
-					// 限制在连接超时时间内获取 `HttpClientRequest`
-					httpReq = await chainRequestModifier.runInConnectTimeout(client.getUrl(Uri.parse(url)));
-				}
-			}
-			
-			// 填充 Cookie
-			final existCookie = chainRequestModifier.getCookies(chainRequestModifier.getUrl());
-			if (existCookie != null) {
-				httpReq.cookies.addAll(existCookie);
-			}
-			
-			PassResponse resultResp;
-			if (httpReqInfoBuilder != null) {
-				resultResp = await httpReqInfoBuilder(httpReq, chainRequestModifier);
-			} else {
-				await chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier);
-				resultResp = await chainRequestModifier.fillRequestBody(httpReq, chainRequestModifier);
-			}
-			
-			if (resultResp != null) {
-				return resultResp;
-			}
-			
-			PassResponse response;
-			if (responseBuilder != null) {
-				response = await responseBuilder(httpReq, modifier);
-			} else {
-				if (chainRequestModifier.existResponseRawDataReceiverCallback()) {
-					// 如果存在响应数据原始接收回调
-					// 执行 [analyzeResponseByReceiver] 方法
-					// 限制在读取超时时间内解析完成 `HttpClientResponse`
-					response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponseByReceiver(modifier, httpReq: httpReq));
-				} else {
-					// 执行 [analyzeResponse] 方法
-					// 限制在读取超时时间内解析完成 `HttpClientResponse`
-					response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(modifier, httpReq: httpReq));
-				}
-			}
-			httpReq = null;
-			
-			return response ?? ErrorPassResponse(msg: '未能成功解析 Response');
-		} catch (e, stackTrace) {
-			return ErrorPassResponse(msg: '请求发生异常: $e', error: e, stacktrace: stackTrace);
-		} finally {
-			if (client != null) {
-				client.close(force: true);
-				client = null;
-			}
-		}
+	Future<PassResponse> requestForPassResponse() async {
+		return await HttpProcessor().request(modifier);
 	}
 }

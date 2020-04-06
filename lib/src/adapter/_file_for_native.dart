@@ -3,9 +3,11 @@ import 'file.dart' as _file;
 
 class FileWrapper implements _file.FileWrapper {
 	
-	FileWrapper(this.filePath);
+	FileWrapper(String filePath): file = File(filePath);
 	
-	final String filePath;
+	FileWrapper.createByFile(this.file);
+	
+	final File file;
 	
 	String _errMsg;
 	
@@ -13,20 +15,20 @@ class FileWrapper implements _file.FileWrapper {
 	String checkErrMsg() => _errMsg;
 	
 	@override
-	String getFilePath() => filePath;
+	String getFilePath() => file.path;
 	
 	@override
 	Future<bool> saveFileData(Stream<List<int>> rawData) async {
-		var file = File(filePath);
 		IOSink ioSink;
+		File tempFile = file;
 		try {
-			if(! await file.exists()) {
-				file = await file.create(recursive: true);
-				if(file == null) {
+			if(! await tempFile.exists()) {
+				tempFile = await tempFile.create(recursive: true);
+				if(tempFile == null) {
 					return false;
 				}
 			}
-			ioSink = file.openWrite();
+			ioSink = tempFile.openWrite();
 			await ioSink.addStream(rawData);
 			ioSink.flush();
 			return true;
@@ -41,5 +43,4 @@ class FileWrapper implements _file.FileWrapper {
 			}
 		}
 	}
-
 }

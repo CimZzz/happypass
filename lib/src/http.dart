@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'adapter/request_process.dart';
+
 part 'http_closer.dart';
 
 part 'http_cookie_manager.dart';
@@ -41,7 +43,8 @@ enum _RequestStatus { Prepare, Executing, Executed }
 /// 请求方法
 /// 1. GET 请求
 /// 2. POST 请求
-enum RequestMethod { GET, POST }
+/// 3. 自定义请求方法
+enum RequestMethod { GET, POST, CUSTOM }
 
 /// 请求执行代理回调接口
 typedef AsyncRunProxyCallback<T, Q> = Future<Q> Function(T);
@@ -121,9 +124,12 @@ class Request extends _BaseRequest {
 	/// 每次 url 发生变化时，该值会重置为 null，下次使用时重新生成
 	/// * 解析过程需要一些计算操作，这样的做的目的是为了缓存当前 url 对应的解析结果，优化了效率
 	PassResolveUrl _resolveUrl;
-
+	
 	/// 存放请求方法
 	RequestMethod _requestMethod;
+	
+	/// 存放自定义请求方法
+	String _customRequestMethod;
 
 	/// 存放请求方法所需数据体
 	dynamic _body;
