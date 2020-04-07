@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:html';
 import 'dart:typed_data';
-import '../http.dart';
+import '_http_response_for_web.dart';
 
 import 'http_request.dart' as _httpRequest;
 
@@ -16,7 +16,7 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 	
 	bool isSendDataCompleted = false;
 	
-	final Completer<PassResponse> _completer;
+	final Completer<PassHttpResponse> _completer = Completer();
 	
 	void _init() {
 		// 请求完成回调接口
@@ -27,7 +27,11 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 				reader.onLoad.first.then((_) {
 					if(!_completer.isCompleted) {
 						final body = reader.result as Uint8List;
-						_completer.complete()
+						_completer.complete(PassHttpResponse(
+							_request.status,
+							_request.responseHeaders,
+							Stream.value(body.toList()))
+						);
 					}
 				});
 				reader.onError.first.then((error) {
@@ -74,7 +78,6 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 			isSendDataCompleted = true;
 		}
 	}
-	
 	
 	@override
 	void close() {

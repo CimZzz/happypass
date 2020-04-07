@@ -25,7 +25,6 @@ class HttpProcessor implements _processor.HttpProcessor {
 			// 开启 XMLHttpRequest
 			final xhr = HttpRequest();
 			xhr.open(method, modifier.getUrl());
-			
 			// 处理 Request Body
 			body = modifier.getRequestBody();
 			

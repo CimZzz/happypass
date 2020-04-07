@@ -1,5 +1,7 @@
 
 
+import 'http_response.dart';
+
 abstract class PassHttpRequest {
 	
 	/// 设置 Http 请求头部
@@ -21,6 +23,9 @@ abstract class PassHttpRequest {
 	/// - 在 Native 中，data 类型应为 `List<int>`
 	/// - 在 Html 中，data 类型应为 `Blob` 或 `List<int>`
 	bool checkDataLegal(dynamic data);
+	
+	/// 获取请求响应
+	Future<PassHttpResponse> fetchHttpResponse();
 	
 	/// 关闭请求
 	void close();
