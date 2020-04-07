@@ -63,14 +63,14 @@ void main() async {
 	}));
 
 	// 这里，我们使用 [Request.quickGet] 发送一个 `GET` 请求，指定请求原型
-	final result = await Request.quickGet(url: 'https://www.baidu.com/fakePath?params=123', prototype: prototype);
+	final result = await happypass.get(url: 'https://www.baidu.com/fakePath?params=123', prototype: prototype);
 	// 观察打印结果
 	print(result);
 
 	// 发送其他请求试试
-	print(await Request.quickPost(path: '/fakePath', body: 'hello', prototype: prototype));
-	print(await Request.quickPost(path: '/fakePath', body: 'hei', prototype: prototype));
-	print(await Request.quickPost(body: 'hi', prototype: prototype));
+	print(await happypass.post(path: '/fakePath', body: 'hello', prototype: prototype));
+	print(await happypass.post(path: '/fakePath', body: 'hei', prototype: prototype));
+	print(await happypass.post(body: 'hi', prototype: prototype));
 
 	// 如果你需要模拟的请求太多了，配置起来极度复杂，那么可以使用 [MockClientPassInterceptor.multi] 方法构造拦截器
 	// 这个构造方法支持以 List 的形式构造模拟拦截器
@@ -103,6 +103,6 @@ void main() async {
 	prototype.addFirstInterceptor(MockClientPassInterceptor.multi([builder1, builder2]));
 
 	// 发送请求试试
-	print(await Request.quickGet(path: '/newPath', prototype: prototype));
-	print(await Request.quickGet(path: '/newPath2', prototype: prototype));
+	print(await happypass.get(path: '/newPath', prototype: prototype));
+	print(await happypass.get(path: '/newPath2', prototype: prototype));
 }

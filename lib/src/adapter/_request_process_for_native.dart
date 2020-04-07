@@ -1,4 +1,6 @@
-import '../http.dart';
+import '../core.dart';
+import '../http_responses.dart';
+
 import 'http_client.dart';
 import 'http_request.dart';
 
@@ -37,16 +39,16 @@ class HttpProcessor implements _processor.HttpProcessor {
 
 			final url = chainRequestModifier.getUrl();
 			final method = chainRequestModifier.getRequestMethod();
-
+			
 			httpReq = await httpClient.fetchHttpRequest(method, url);
 			// 装配 `PassHttpRequest`，保证中断器可以正常中断请求
 			chainRequestModifier.assembleHttpRequest(httpReq);
-
+			
 			if (chainRequestModifier.isClosed) {
 				// 如果请求已经取消，则直接返回 null
 				return null;
 			}
-
+			
 			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier, useProxy: false);
 			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, chainRequestModifier, useProxy: false, sendOnce: true);
 
@@ -69,16 +71,15 @@ class HttpProcessor implements _processor.HttpProcessor {
 			
 			return response ?? ErrorPassResponse(msg: '未能成功解析 Response');
 		} catch (e, stackTrace) {
-			print(stackTrace);
 			return ErrorPassResponse(msg: '请求发生异常: $e', error: e, stacktrace: stackTrace);
 		} finally {
+			httpReq?.close();
 			if(isTempHttpClient) {
 				if (httpClient != null) {
 					httpClient.close();
 					httpClient = null;
 				}
 			}
-			httpReq?.close();
 		}
 	}
 	

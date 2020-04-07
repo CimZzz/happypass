@@ -3,7 +3,7 @@ import 'package:happypass/happypass.dart';
 /// 下面实例展示了如何利用 `happypass`，快速的执行一次 `GET` 请求
 void main() async {
 	// 使用 [Request.quickGet] 方法执行请求
-	final result = await Request.quickGet(
+	final result = await happypass.get(
 		url: 'https://www.baidu.com/',
 		configCallback: (request) {
 			// 这一步的作用是快捷配置字符串编解码器

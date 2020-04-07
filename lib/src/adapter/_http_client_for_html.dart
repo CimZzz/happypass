@@ -1,8 +1,10 @@
 import 'dart:html';
-import '../http.dart';
+import '../http_proxy.dart';
 import '../http_errors.dart';
+import '../core.dart';
 import '_http_request_for_html.dart';
 import 'http_client.dart' as _httpClient;
+
 
 final kHttpClient = PassHttpClient();
 

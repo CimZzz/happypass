@@ -1,4 +1,4 @@
-import '../http.dart';
+import '../request_body.dart';
 
 import '_multi_part_for_native.dart'
 if (dart.library.html) '_multi_part_for_html.dart' as _multipart;

@@ -6,8 +6,8 @@ void main() async {
 	dynamic result;
 
 	// 首先演示 GET 请求
-	// 使用 [Request.quickGet] 方法快速发起一次 `GET` 请求
-	result = await Request.quickGet(
+	// 快速发起一次 `GET` 请求
+	result = await happypass.get(
 		// GET 请求地址
 		url: 'https://www.baidu.com',
 		// 拼接在地址后方的路径
@@ -34,8 +34,8 @@ void main() async {
 	// 为请求原型配置 utf8 字符串编解码器
 	prototype.stringChannel();
 
-	// 仍然使用 [Request.quickGet]，和上次不同的是，这次使用请求原型来孵化请求
-	result = await Request.quickGet(
+	// 这次使用请求原型来孵化请求
+	result = await happypass.get(
 		// 因为我们请求原型中已经指定了 baseUrl，所以无需重复配置请求 Url 了
 		// url: 'http://www.baidu.com',
 		path: '/s?wd=helloworld',
@@ -45,9 +45,9 @@ void main() async {
 	print(result);
 
 	// 具体如何搭配由你来决定，happypass 推崇的就是开发者拥有高度的自由度，给予开发者基于 `happypass` 实现高度自定义请求
-	// 下面介绍使用 [Request.quickPost] 方法快速发起一次 `POST` 请求
+	// 下面介绍快速发起一次 `POST` 请求
 	// POST 方法同样也可以使用原型来孵化请求，可以参考 GET 请求，这里就不多赘述了
-	result = await Request.quickPost(
+	result = await happypass.post(
 		// POST 请求地址
 		url: 'xxxx',
 		// 拼接在地址后方的路径

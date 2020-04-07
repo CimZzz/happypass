@@ -1,4 +1,6 @@
 import 'http_request.dart';
+import '../core.dart';
+import '../http_proxy.dart';
 
 import '_http_client_for_native.dart'
 if (dart.library.html) '_http_client_for_html.dart' as _httpClient;

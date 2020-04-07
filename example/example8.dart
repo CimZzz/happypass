@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:happypass/happypass.dart';
 
 /// 本示例实现了用自定义拦截器进行请求正常拦截，不使用提供的请求方法。在本示例中，会确保 `Request` 的全部功能仍然正常使用。
 void main() async {
-	// 为了方便依然使用 [Request.quickGet] 方法
-	final result = await Request.quickGet(
+	// 发送一次 GET 请求
+	final result = await happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 设置字符串编解码器
@@ -16,18 +14,17 @@ void main() async {
 				// 在本示例中，我们不在使用提供的方法，但是要确保全部 `happypass` 的功能可以正常使用
 				// ChainRequestModifier 提供了大量数据访问的方法，我们要合理利用它
 				ChainRequestModifier modifier = chain.modifier;
-				HttpClient client;
-				HttpClientRequest httpReq;
+				PassHttpClient client;
 				try {
 					// 实例化 `HttpClient`
-					client = HttpClient();
+					client = PassHttpClient();
 					// * 这一步是为了确保请求中断器可以正常中断请求
 					// * 请求已经开始运作，请求中断器在这个时候可以中断 `HttpClient` 来实现
 					// * 请求的中断
 					modifier.assembleHttpClient(client);
 
 					// 填充宽松请求超时时间，这是为了由我们来接管超时处理逻辑
-					// 比如使用 [ChainRequestModifier.runInConnectTimeout] 将生成 `HttpClientRequest` 方法包装起来，
+					// 比如使用 [ChainRequestModifier.runInConnectTimeout] 将生成 `PassHttpRequest` 方法包装起来，
 					// 如果在给定连接超时时间内没有生成成功，那么该方法将会直接抛出连接超时异常
 					//
 					// * 如果不想使用 `happypass` 管理超时时间，那么可以使用 [ChainRequestModifier.fillTightTimeout] 方法
@@ -35,24 +32,10 @@ void main() async {
 					//
 					// modifier.fillTightTimeout(client);
 					modifier.fillLooseTimeout(client);
-					// 根据请求方法来生成 `HttpClientRequest`
-					final url = modifier.getUrl();
-					if (modifier.getRequestMethod() == RequestMethod.POST) {
-						httpReq = await modifier.runInConnectTimeout(client.postUrl(Uri.parse(url)));
-					} else {
-						httpReq = await client.getUrl(Uri.parse(url));
-					}
+					// 根据请求方法来生成 `PassHttpRequest`
+					final httpReq = await client.fetchHttpRequest(modifier.getRequestMethod(), modifier.getUrl());
 
-					// * 这一步是为了确保 Cookie 能够正确配置
-					// * `HttpClientRequest` 已经生成完毕，首先为其配置来自
-					// * `CookieManager` 中所储存的 Cookie，而这一步正是从 CookieManager
-					// * 中提取 Cookie
-					final existCookie = modifier.getCookies(modifier.getUrl());
-					if (existCookie != null) {
-						httpReq.cookies.addAll(existCookie);
-					}
-
-					// 为 `HttpClientRequest` 配置其他请求参数
+					// 为 `PassHttpRequest` 配置其他请求参数
 					// 1. 请求头部
 					// 2. 请求 Body
 
@@ -60,10 +43,7 @@ void main() async {
 					// * 该方法做过优化，可以通过设置 `useProxy` 来决定是否在请求运行代理中填充请求头部（如果设置了的话）
 					// * 当然，我们也可以自行填充请求头部，就像下面这样
 					// modifier.fillRequestHeader(httpReq, modifier, useProxy: false);
-					modifier.forEachRequestHeaders((String key, String value) {
-						// 遍历请求头部列表添加到 `HttpClientRequest` 中
-						httpReq.headers.add(key, value);
-					});
+					modifier.forEachRequestHeaders(httpReq.setRequestHeader);
 
 					// * 可以使用 [ChainRequestModifier.fillRequestBody] 方法来快速填充请求 Body
 					// * 该方法做过优化:
@@ -83,8 +63,8 @@ void main() async {
 							// [RequestBody] 可以覆盖 `Content-Type` 请求头部
 							// 如果请求不存在 `Content-Type` 头部或者 [RequestBody.overrideContentType] 设置为 `true` 时，
 							// `Content-Type` 将会被覆盖
-							if (requestBody.overrideContentType == true || httpReq.headers.value('content-type') == null) {
-								httpReq.headers.set('content-type', requestBody.contentType);
+							if (requestBody.overrideContentType == true || httpReq.getRequestHeader('content-type') == null) {
+								httpReq.setRequestHeader('content-type', requestBody.contentType);
 							}
 
 							// `RequestBody` 中的数据以流的形式存在
@@ -93,7 +73,7 @@ void main() async {
 								// 除非数据类型为 `RawDataBody`
 								// `RawDataBody` 表示该数据即为原始数据，不应对其进行编码
 								if (message is RawBodyData) {
-									httpReq.add(message.rawData);
+									httpReq.sendData(message.rawData);
 									continue;
 								}
 
@@ -102,14 +82,14 @@ void main() async {
 								// * 当然，你也可以遍历编码器进行编码，这一切取决你
 								message = await modifier.encodeMessage(message, useProxy: true);
 
-								if (message is! List<int>) {
-									// 最终编码结果必须为 `List<int>` 类型的 byte 数据，
+								if (httpReq.checkDataLegal(message)) {
+									// 检查数据类型是否合法
 									// 否则认定为请求错误，返回请求错误
 									return ErrorPassResponse(msg: '[POST] 最后的编码结果类型不为 \'List<int>\'');
 								}
 
-								// 将最终的 byte 交给 `HttpClientRequest`
-								httpReq.add(message);
+								// 将最终的 byte 交给 `PassHttpRequest`
+								httpReq.sendData(message);
 							}
 						} else {
 							// 请求 Body 是某种数据结构，需要我们通过编码器最终将其转化为 `List<int>` 类型的 byte 数据
@@ -125,13 +105,13 @@ void main() async {
 								message = await modifier.encodeMessage(message, useProxy: true);
 							}
 
-							if (message is! List<int>) {
-								// 最终编码结果必须为 `List<int>` 类型的 byte 数据，
+							if (httpReq.checkDataLegal(message is! List<int>)) {
+								// 检查数据类型是否合法
 								// 否则认定为请求错误，返回请求错误
 								return ErrorPassResponse(msg: '[POST] 最后的编码结果类型不为 \'List<int>\'');
 							}
 
-							httpReq.add(message);
+							httpReq.sendData(message);
 						}
 					}
 
@@ -144,20 +124,16 @@ void main() async {
 					// * `happypass` 提供了两种解析响应数据的方法
 					// * - analyzeResponse : 标准解析响应数据方法。收集全部响应数据，使用解码器对数据进行解码，生成 `PassResponse` 并返回
 					// * - analyzeResponseByReceiver : 使用响应数据原始接收接口解析响应数据。不会收集响应数据，而是直接将数据中转到接口中进行处理，根据接口处理完成后返回的数据，生成 `PassResponse` 并返回
-					// modifier.analyzeResponse(modifier, httpReq: httpReq);
-					modifier.analyzeResponseByReceiver(modifier, httpReq: httpReq);
+					// modifier.analyzeResponse(httpReq, modifier);
+					// modifier.analyzeResponseByReceiver(httpReq, modifier);
 
 					// * 下面我们不借助 `ChainRequestModifier` 提供的解析方法，自行解析响应数据，并保证 `happypass` 各个功能能够正确工作
-
-					// 通过 `HttpClientRequest` 获取响应数据
-					final httpResponse = await httpReq.close();
+					
+					// 通过 `PassHttpRequest` 获取响应数据
+					final httpResponse = await httpReq.fetchHttpResponse();
 					// * 紧接着，我们需要标记请求已经执行完成，以防止在响应向上回溯时，请求原始数据遭到修改
 					// * 调用 [ChainRequestModifier.markRequestExecuted] 即可
 					modifier.markRequestExecuted();
-					// * 将响应数据中的 Cookie 交由 `CookieManager` 处理
-					// * 调用 [ChainRequestModifier.storeCookies] 即可
-					// * 在方法中存在空值处理，所以我们无需再次进行空值校验
-					modifier.storeCookies(url, httpResponse.cookies);
 
 					// * 为了保证通知响应进度回调消息准确，我们需要取 `HttpClientResponse` 中的 `Content-Length`，
 					// * 作为总的接收数据长度
@@ -172,7 +148,7 @@ void main() async {
 						passResponse = await modifier.runInReadTimeout(() async {
 							// 如果存在原始响应数据接收回调，应将实际处理逻辑交由接口实现
 							// 请参考下面写法，能够确保请求设置的原始响应数据接收回调正常工作
-							Stream<List<int>> rawDataStream = httpResponse;
+							Stream<List<int>> rawDataStream = httpResponse.bodyStream;
 
 							// * 如果想让响应数据通知进度功能生效的话，我们必须在接收响应数据时进行处理
 							// * 调用 [ChainRequestModifier.notifyResponseDataUpdate] 方法可以通知全部进度回调进度更新
@@ -217,7 +193,7 @@ void main() async {
 
 							// 接收之前先触发一次空进度通知
 							modifier.notifyResponseDataUpdate(curLength, totalLength: totalLength);
-							await httpResponse.forEach((byteList) {
+							await httpResponse.bodyStream.forEach((byteList) {
 								responseBody.addAll(byteList);
 								// 每当接收到新数据时，进行通知更新
 								curLength += byteList.length;
@@ -240,10 +216,11 @@ void main() async {
 
 					// 如果接收完毕但没有返回应有的响应对象，那么会返回一个 `ErrorPassResponse` 表示处理出错
 					return passResponse ?? ErrorPassResponse(msg: '未能成功解析 Response');
-				} catch (e) {
+				} catch (e, stackTrace) {
+					print(stackTrace);
 					return ErrorPassResponse(msg: '请求发生异常: $e', error: e);
 				} finally {
-					client?.close(force: true);
+					client?.close();
 				}
 			}));
 		});

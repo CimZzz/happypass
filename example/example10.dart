@@ -14,8 +14,8 @@ import 'package:happypass/happypass.dart';
 /// * `happypass` 支持拦截器使用请求运行代理执行任意自定义方法，仅需通过 [ChainRequestModifier.runProxy] 方法即可
 ///
 void main() async {
-	// 我们使用 [Request.quickGet] 方法快速发出一个 `GET` 请求
-	final result = await Request.quickGet(
+	// 快速进行一个 `GET` 请求
+	final result = await happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			request.stringChannel();

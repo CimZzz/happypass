@@ -1,5 +1,5 @@
+import 'core.dart';
 import 'http_responses.dart';
-import 'request_builder.dart';
 
 /// 请求中断响应结果选择回调
 typedef RequestCloserResponseChooseCallback = ResultPassResponse Function(ChainRequestModifier modifier);
@@ -51,9 +51,9 @@ class RequestCloser {
 
 	/// 装配 [ChainRequestModifier]
 	/// 发生在实际执行请求逻辑之前
-	void _assembleModifier(ChainRequestModifier modifier) {
+	void assembleModifier(ChainRequestModifier modifier) {
 		if (isClosed) {
-			modifier._finishResponse = _pickFinishResponse(modifier);
+			modifier.assembleFinishResponse(_pickFinishResponse(modifier));
 		} else {
 			_modifierSet ??= {};
 			_modifierSet.add(modifier);
@@ -61,7 +61,7 @@ class RequestCloser {
 	}
 
 	/// 回收 [ChainRequestModifier] 引用
-	void _finish(ChainRequestModifier modifier) {
+	void finish(ChainRequestModifier modifier) {
 		_modifierSet?.remove(modifier);
 	}
 }

@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:happypass/happypass.dart';
-
-/// 本示例演示了如何利用拦截器实现自定义请求
+/// 本示例表示简单的 http 转发服务端
 void main() async {
 	final server = await ServerSocket.bind('127.0.0.1', 4444);
 	final list = [];

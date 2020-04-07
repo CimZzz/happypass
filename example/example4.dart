@@ -63,13 +63,6 @@ void main() async {
 	});
 	// 以 Map 的形式设置自定义请求头部
 	prototype.setCustomRequestHeaderByMap({'TOKEN': 'wishper'});
-	// 设置 Cookie 管理器
-	// `happypass` 提供的 Cookie 管理器有:
-	// - MemoryCacheCookieManager: 内存缓存 Cookie 管理器
-	//
-	// 如果使用以上 Cookie 管理器不能满足你的需求，那么就去自定义一个吧
-	// 定义一个继承自 [CookieManager] 的子类即可实现 Cookie 的自定义管理
-	prototype.setCookieManager(MemoryCacheCookieManager());
 
 	// 请求原型不允许设置中断器
 	// 因为请求原型应对的场景是全局，而中断器只是用于局部逻辑

@@ -1,10 +1,9 @@
 import 'package:happypass/happypass.dart';
 
 /// 下面列举了请求可以配置的全部参数
-/// * 请求无法直接实例化，而是通过 [Request.construct] 方法来进行实例化
 void main() async {
-	// 通过 [Request.construct] 方法直接创建实例
-	Request request = Request.construct();
+	// 创建请求实例
+	Request request = Request();
 
 	// 设置请求 Id
 	// 为当前请求添加唯一标识符，以便于在特殊情况下区分请求
@@ -63,13 +62,7 @@ void main() async {
 	});
 	// 以 Map 的形式设置自定义请求头部
 	request.setCustomRequestHeaderByMap({'TOKEN': 'wishper'});
-	// 设置 Cookie 管理器
-	// `happypass` 提供的 Cookie 管理器有:
-	// - MemoryCacheCookieManager: 内存缓存 Cookie 管理器
-	//
-	// 如果使用以上 Cookie 管理器不能满足你的需求，那么就去自定义一个吧
-	// 定义一个继承自 [CookieManager] 的子类即可实现 Cookie 的自定义管理
-	request.setCookieManager(MemoryCacheCookieManager());
+	
 	// 设置请求中断器
 	// 可以强制中断请求，并且立即返回给定的响应结果
 	// 使用 [RequestCloser.close] 方法即可

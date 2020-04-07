@@ -1,7 +1,7 @@
 part of 'core.dart';
 
 /// 获取请求 id 配置混合
-mixin RequestIdGetter implements RequestOperatorMixBase {
+mixin _RequestIdGetter implements _RequestOperatorMixBase {
 	/// 获取当前请求设置的 id 信息
 	dynamic getReqId() {
 		return _requestOptions.reqId;
@@ -10,7 +10,7 @@ mixin RequestIdGetter implements RequestOperatorMixBase {
 
 /// 获取请求方法配置混合
 /// 用于获取 Request 的请求方法
-mixin RequestMethodGetter implements RequestOperatorMixBase {
+mixin _RequestMethodGetter implements _RequestOperatorMixBase {
 	/// 获取当前的请求方法
 	RequestMethod getRequestMethod() {
 		return _requestOptions.requestMethod;
@@ -22,7 +22,7 @@ mixin RequestMethodGetter implements RequestOperatorMixBase {
 
 /// 获取请求 Url 配置混合
 /// 用于获取 Request 的请求 Url
-mixin RequestUrlGetter implements RequestOperatorMixBase {
+mixin _RequestUrlGetter implements _RequestOperatorMixBase {
 	/// 获取请求地址
 	String getUrl() => _requestOptions.url;
 	
@@ -38,14 +38,14 @@ mixin RequestUrlGetter implements RequestOperatorMixBase {
 
 /// 获取请求 Url 配置混合
 /// 用于获取 Request 的请求 Url
-mixin RequestHeaderGetter implements RequestOperatorMixBase {
+mixin _RequestHeaderGetter implements _RequestOperatorMixBase {
 	/// 获取请求头部
 	/// 该方法会将 `Key` 值转化为小写形式
-	String getRequestHeader(String key) => key != null ? _buildRequest?._headerMap[key.toLowerCase()] : null;
+	String getRequestHeader(String key) => key != null ? _requestOptions?.headerMap[key.toLowerCase()] : null;
 	
 	/// 获取请求头部
 	/// 该方法保留 `Key` 值的大小写形式
-	String getCustomRequestHeader(String key) => key != null ? _buildRequest?._headerMap[key] : null;
+	String getCustomRequestHeader(String key) => key != null ? _requestOptions?.headerMap[key] : null;
 	
 	/// 遍历请求头
 	void forEachRequestHeaders(HttpHeaderForeachCallback callback) {
@@ -58,7 +58,7 @@ mixin RequestHeaderGetter implements RequestOperatorMixBase {
 
 /// 获取请求体配置混合
 /// 用于获取 Request 的请求 Body
-mixin RequestBodyGetter implements RequestOperatorMixBase {
+mixin _RequestBodyGetter implements _RequestOperatorMixBase {
 	/// 获取当前的请求 Body（只在 Post 方法下存在该值）
 	dynamic getRequestBody() {
 		return _requestOptions.body;
@@ -66,7 +66,7 @@ mixin RequestBodyGetter implements RequestOperatorMixBase {
 }
 
 /// 获取请求 Http 代理配置混合
-mixin RequestProxyGetter implements RequestOperatorMixBase {
+mixin _RequestProxyGetter implements _RequestOperatorMixBase {
 	/// 获取指定 Host 下全部的请求 Http 代理
 	List<PassHttpProxy> getPassHttpProxiesByHost(String host) {
 		List<PassHttpProxy> list;
@@ -84,7 +84,12 @@ mixin RequestProxyGetter implements RequestOperatorMixBase {
 	
 	/// 获取全部请求 Http 代理
 	List<PassHttpProxy> getPassHttpProxies() {
-		return List.from(_requestOptions.httpProxyList);
+		if(_requestOptions.httpProxyList != null) {
+			return List.from(_requestOptions.httpProxyList);
+		}
+		else {
+			return null;
+		}
 	}
 	
 	/// 遍历请求 Http 代理
@@ -103,7 +108,7 @@ mixin RequestProxyGetter implements RequestOperatorMixBase {
 
 
 /// 获取 Request 超时时间混合
-mixin RequestTimeoutGetter implements RequestOperatorMixBase {
+mixin _RequestTimeoutGetter implements _RequestOperatorMixBase {
 	/// 获取请求连接超时时间
 	/// 包括拦截器处理耗时也会计算到其中
 	Duration getTotalTimeout() {
@@ -122,7 +127,7 @@ mixin RequestTimeoutGetter implements RequestOperatorMixBase {
 }
 
 /// 获取 PassHttpClient 混合
-mixin RequestClientGetter implements RequestOperatorMixBase {
+mixin _RequestClientGetter implements _RequestOperatorMixBase {
 
 	/// 获取 PassHttpClient
 	/// 仅返回配置的 HttpClient
@@ -132,7 +137,7 @@ mixin RequestClientGetter implements RequestOperatorMixBase {
 }
 
 /// 获取请求拦截器配置混合
-mixin RequestInterceptorsGetter implements RequestOperatorMixBase {
+mixin _RequestInterceptorsGetter implements _RequestOperatorMixBase {
 
 	/// 获取请求拦截器
 	List<PassInterceptor> getPassInterceptors() {

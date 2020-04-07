@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-//import '../http.dart';
+import '../request_body.dart';
 import 'multi_part.dart' as _multipart;
 
 
@@ -156,17 +156,17 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 			}
 			contentHeader += '\r\n';
 			
-//			yield RawBodyData(rawData: utf8.encode(contentHeader));
+			yield RawBodyData(rawData: utf8.encode(contentHeader));
 			if (multiData.data is Stream) {
 				yield* multiData.data;
 			} else {
 				yield multiData.data;
 			}
 			
-//			yield RawBodyData(rawData: utf8.encode('\r\n'));
+			yield RawBodyData(rawData: utf8.encode('\r\n'));
 		}
 		
-//		yield RawBodyData(rawData: utf8.encode('--$_multipartBoundary--'));
+		yield RawBodyData(rawData: utf8.encode('--$_multipartBoundary--'));
 	}
 	
 }

@@ -1,5 +1,8 @@
 import 'dart:async';
-import 'http.dart';
+import 'core.dart';
+import 'http_responses.dart';
+import 'http_interceptor_chain.dart';
+import 'http_interceptors.dart';
 
 /// 模拟拦截回调的构造器
 typedef MockBuilderCallback = Map<String, dynamic> Function(MockClientBuilder builder);

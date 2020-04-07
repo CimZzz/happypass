@@ -1,6 +1,8 @@
-import 'request_builder.dart';
+import 'core.dart';
 import 'http_responses.dart';
 import 'http_interceptors.dart';
+
+import 'adapter/request_process.dart';
 
 /// 拦截器处理链
 /// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
@@ -21,7 +23,7 @@ import 'http_interceptors.dart';
 /// [PassInterceptorChain.requestForPassResponse] 将构建好的 Request 通过 HttpClient 的方式转换为 Response(PassResponse)
 /// [PassInterceptorChain.modifier] 可以对 Request 进行修改
 class PassInterceptorChain {
-	PassInterceptorChain._(Request request)
+	PassInterceptorChain(Request request)
 		: assert(request != null),
 			_chainRequestModifier = ChainRequestModifier(request),
 			_interceptors = request.getPassInterceptors(),
@@ -37,12 +39,12 @@ class PassInterceptorChain {
 		_chainRequestModifier.assembleCloser(_chainRequestModifier);
 		// 如果请求在执行前已经被中断，则直接返回中断的响应结果
 		if (_chainRequestModifier.isClosed) {
-			final response = _chainRequestModifier._finishResponse;
-			_chainRequestModifier._finish();
+			final response = _chainRequestModifier.getFinishResponse();
+			_chainRequestModifier.finish();
 			return response;
 		}
-		final response = await _chainRequestModifier._requestProxy(_chainRequestModifier.runInTotalTimeout(_waitResponse(0)));
-		_chainRequestModifier._finish();
+		final response = await _chainRequestModifier.requestProxy(_chainRequestModifier.runInTotalTimeout(_waitResponse(0)));
+		_chainRequestModifier.finish();
 		// 没有生成 Response，表示拦截器将请求
 		if (response == null) {
 			return ErrorPassResponse(msg: '未能生成 Response');

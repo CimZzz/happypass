@@ -1,11 +1,25 @@
 library happypass;
 
-//export 'src/form_data.dart';
-//export 'src/http.dart';
-//export 'src/http_mock_interceptor.dart';
-export 'src/multi_part.dart';
-//export 'src/http_quick_access.dart';
-//export 'src/adapter/multi_part.dart';
+
+
 export 'src/adapter/http_client.dart';
 export 'src/adapter/http_request.dart';
 export 'src/adapter/http_response.dart';
+export 'src/adapter/multi_part.dart';
+
+
+export 'src/core.dart';
+export 'src/form_data.dart';
+export 'src/http_closer.dart';
+export 'src/http_decoders.dart';
+export 'src/http_encoders.dart';
+export 'src/http_errors.dart';
+export 'src/http_interceptor_chain.dart';
+export 'src/http_interceptors.dart';
+export 'src/http_mock_interceptor.dart';
+export 'src/http_proxy.dart';
+export 'src/http_quick_access.dart';
+export 'src/http_responses.dart';
+export 'src/http_utils.dart';
+export 'src/request_body.dart';
+export 'src/stream_data.dart';

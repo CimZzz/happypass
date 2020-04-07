@@ -1,7 +1,7 @@
 part of 'core.dart';
 
 /// 用来检查当前请求的执行状态
-mixin RequestStatusChecker implements RequestOperatorMixBase {
+mixin _RequestStatusChecker implements _RequestOperatorMixBase {
 
 	/// 检查当前状态是否处于准备状态
 	/// 在这个状态下可以修改全部配置
@@ -16,7 +16,7 @@ mixin RequestStatusChecker implements RequestOperatorMixBase {
 /// 调用请求执行代理
 /// 通过请求执行代理来执行回调
 /// 注意的是，回调必须为 `static`
-mixin RequestProxyRunner implements RequestOperatorMixBase {
+mixin _RequestProxyRunner implements _RequestOperatorMixBase {
 	/// 通过配置的执行代理执行回调
 	/// 注意的是，回调必须为 `static`
 	Future<Q> runProxy<T, Q>(AsyncRunProxyCallback<T, Q> callback, T message) async {
@@ -32,39 +32,33 @@ mixin RequestProxyRunner implements RequestOperatorMixBase {
 
 /// 填充 Request 头部混合
 /// 用于填充 Request Headers
-mixin RequestHeaderFiller implements RequestOperatorMixBase {
+mixin _RequestHeaderFiller implements _RequestOperatorMixBase {
 	/// 将配置好的请求头部填充到 PassHttpRequest 中
 	void fillRequestHeader(PassHttpRequest httpReq, ChainRequestModifier modifier, {bool useProxy = true}) async {
-		final headers = modifier._request._headerMap;
-		if (headers != null && headers.isNotEmpty) {
-			final bundle = _HeaderBundle(httpReq, headers);
-			if (useProxy) {
-				await modifier.runProxy(_fillHeaders, bundle);
-			} else {
-				await _fillHeaders(bundle);
-			}
+		final bundle = _HeaderBundle(httpReq, modifier);
+		if (useProxy) {
+			await modifier.runProxy(_fillHeaders, bundle);
+		} else {
+			await _fillHeaders(bundle);
 		}
 	}
 
 	static Future _fillHeaders(_HeaderBundle bundle) async {
 		final httpReq = bundle._request;
-		final headers = bundle._requestHeaders;
-		if (headers != null && headers.isNotEmpty) {
-			headers.forEach(httpReq.setRequestHeader);
-		}
+		bundle._requestHeaderGetter.forEachRequestHeaders(httpReq.setRequestHeader);
 	}
 }
 
 /// 用于包装需要填充的请求和请求头的数据集
 class _HeaderBundle {
-	_HeaderBundle(this._request, this._requestHeaders);
+	_HeaderBundle(this._request, this._requestHeaderGetter);
 
 	final PassHttpRequest _request;
-	final Map<String, String> _requestHeaders;
+	final _RequestHeaderGetter _requestHeaderGetter;
 }
 
 /// 用于进行编码消息
-mixin RequestEncoder implements RequestOperatorMixBase, RequestProxyRunner {
+mixin _RequestEncoder implements _RequestOperatorMixBase, _RequestProxyRunner {
 	/// 使用现有的编码器进行消息编码
 	/// - useProxy: 是否使用请求运行代理
 	FutureOr<dynamic> encodeMessage(dynamic message, {bool useProxy = true}) {
@@ -108,7 +102,7 @@ class _EncodeBundle {
 
 /// 填充 Request 请求Body
 /// 用于填充 Request Body，可选择进行代理和编码
-mixin RequestBodyFiller implements RequestOperatorMixBase, RequestEncoder {
+mixin _RequestBodyFiller implements _RequestOperatorMixBase, _RequestEncoder {
 	/// 将配置好的 Body 填充到 PassHttpRequest 中，如果 Body 在处理过程中发生错误，则会直接返回抛出异常
 	/// 可以选择是否使用代理，编码
 	/// 默认情况下，使用编码与代理
@@ -191,7 +185,7 @@ mixin RequestBodyFiller implements RequestOperatorMixBase, RequestEncoder {
 }
 
 /// 用于解码消息
-mixin ResponseDecoder implements RequestOperatorMixBase, RequestProxyRunner {
+mixin _ResponseDecoder implements _RequestOperatorMixBase, _RequestProxyRunner {
 	/// 使用现有的解码器进行消息解码
 	/// - useProxy: 是否使用请求运行代理
 	FutureOr<dynamic> decodeMessage(dynamic message, {bool useProxy = true}) {
@@ -237,7 +231,7 @@ class _DecodeBundle {
 
 /// 解析 Request 的 Response Body
 /// 用于解析 Response Body，可选择进行代理和解码
-mixin ResponseBodyDecoder implements RequestOperatorMixBase, ResponseDecoder {
+mixin _ResponseBodyDecoder implements _RequestOperatorMixBase, _ResponseDecoder {
 	/// 从 PassHttpRequest 中获取 PassHttpResponse，并读取其全部 Byte 数据存入 List<int> 中
 	/// 如果 Body 在处理过程中发生错误，则会直接抛出异常
 	/// 可以选择是否使用代理，编码
@@ -343,17 +337,17 @@ mixin ResponseBodyDecoder implements RequestOperatorMixBase, ResponseDecoder {
 
 /// 通知当前 Response Body 接收进度
 /// 用于解析 Response Body，可选择进行代理和解码
-mixin ResponseDataUpdate implements RequestOperatorMixBase {
+mixin _ResponseDataUpdate implements _RequestOperatorMixBase {
 	/// 通知相应数据接收进度
 	/// 每当接收到新的数据时，都应触发该方法
 	/// 如果总长度未知，则不应传总长度参数
 	void notifyResponseDataUpdate(int length, {int totalLength = -1}) {
 		// 除非总长度总长度未知，否则接收的数据长度不应超过总长度
-		if (length > totalLength && totalLength != -1) {
-			if (Request.DEBUG) {
-				print('[WARN] ${_buildRequest.getUrl()}: recv length over total length!');
-			}
-		}
+//		if (length > totalLength && totalLength != -1) {
+//			if (Request.DEBUG) {
+//				print('[WARN] ${_buildRequest.getUrl()}: recv length over total length!');
+//			}
+//		}
 
 		_requestOptions.responseDataUpdateList?.forEach((callback) {
 			callback(length, totalLength);
@@ -363,7 +357,7 @@ mixin ResponseDataUpdate implements RequestOperatorMixBase {
 
 /// 直接传输 Request 的 Response Body 数据
 /// 从响应中获取数据，不做任何处理交给接收响应原始数据回调处理
-mixin ResponseRawDataTransfer implements RequestOperatorMixBase {
+mixin _ResponseRawDataTransfer implements _RequestOperatorMixBase {
 	/// 调用接收响应原始数据接口，将 Future 直接返回
 	/// 该方法并未在执行代理中执行
 	Future<dynamic> transferRawDataForRawDataReceiver(Stream<List<int>> rawDataStream) {
@@ -377,21 +371,21 @@ mixin ResponseRawDataTransfer implements RequestOperatorMixBase {
 /// 切换当前请求状态为已执行
 /// 按照规范，当 `PassHttpRequest` 执行完 `fetchHttpResponse` 方法后，
 /// 应该主动调用该方法，以防止一些请求前的配置信息遭到修改
-mixin RequestExecutedChanger implements RequestOperatorMixBase {
+mixin _RequestExecutedChanger implements _RequestOperatorMixBase {
 	/// 将当前请求状态标记为已执行
 	void markRequestExecuted() {
-		_requestOptions.status = RequestStatus.Executed;
+		_requestOptions.status = _RequestStatus.Executed;
 	}
 
 	/// 将当前请求状态标记为已执行
 	void markRequestExecuting() {
-		_requestOptions.status = RequestStatus.Executing;
+		_requestOptions.status = _RequestStatus.Executing;
 	}
 }
 
 /// 中断请求
 /// 可以强制中断请求结束，并返回指定的响应结果
-mixin RequestClose implements RequestOperatorMixBase {
+mixin _RequestClose implements _RequestOperatorMixBase {
 	/// 判断当前请求是否已经结束
 	bool _isClosed = false;
 
@@ -417,11 +411,11 @@ mixin RequestClose implements RequestOperatorMixBase {
 	StreamSubscription<PassResponse> _innerSubscription;
 
 	/// 用于 `ChainRequestModifier` 首次装配给 `RequestCloser`
-	void _assembleCloser(ChainRequestModifier modifier) {
+	void assembleCloser(ChainRequestModifier modifier) {
 		final closerSet = _requestOptions.requestCloserSet;
 		if (closerSet != null) {
 			for (var closer in closerSet) {
-				closer._assembleModifier(modifier);
+				closer.assembleModifier(modifier);
 				if (isClosed) {
 					// 如果请求被某个中断器中断的话，那么将不再访问后续中断器
 					break;
@@ -441,7 +435,7 @@ mixin RequestClose implements RequestOperatorMixBase {
 	/// B - 表示中断逻辑
 	/// C - 表示最后返回的处理结果
 	/// A 或 B 首先触发的一方任意结果都会成为 C 的最终结果
-	FutureOr<PassResponse> _requestProxy(Future<PassResponse> realFuture) {
+	FutureOr<PassResponse> requestProxy(Future<PassResponse> realFuture) {
 		if (_finishResponse != null) {
 			return _finishResponse;
 		}
@@ -449,6 +443,8 @@ mixin RequestClose implements RequestOperatorMixBase {
 		_innerCompleter = Completer();
 		_innerSubscription = _realBusinessCompleter.future.asStream().listen((data) {
 			_innerCompleter.complete(data);
+		}, onError: (e, stackTrace) {
+			_innerCompleter.complete(ErrorPassResponse(msg: e.toString(), error: e, stacktrace: stackTrace));
 		});
 		_realBusinessCompleter.complete(realFuture);
 		return _innerCompleter.future;
@@ -469,7 +465,15 @@ mixin RequestClose implements RequestOperatorMixBase {
 			httpRequest.close();
 		}
 	}
-
+	
+	/// 装配终结响应对象
+	void assembleFinishResponse(ResultPassResponse finishResponse) {
+		_finishResponse = finishResponse;
+	}
+	
+	/// 获取终结响应对象
+	ResultPassResponse getFinishResponse() => _finishResponse;
+	
 	/// 强制中断当前请求
 	/// - finishResponse: 中断请求所返回的最终响应结果
 	void close({ResultPassResponse finishResponse = const ErrorPassResponse(msg: 'request interrupted!')}) {
@@ -479,6 +483,13 @@ mixin RequestClose implements RequestOperatorMixBase {
 		// 因为 `Completer` 完成不是立即生效的，如果在同一时间内多个中断器同时中断请求
 		// 会导致多次完成 `Completer` 而引起异常，所以需要在第一次执行中断逻辑后立即回收
 		// `Completer` 相关的资源，防止该异常的发生
+		_reset();
+	}
+	
+	/// 清理当前所持有的引用和状态
+	void finish() {
+		_isClosed = true;
+		_finishResponse = null;
 		_reset();
 	}
 
@@ -492,17 +503,11 @@ mixin RequestClose implements RequestOperatorMixBase {
 		_client = null;
 	}
 
-	/// 清理当前所持有的引用和状态
-	void _finish() {
-		_isClosed = true;
-		_finishResponse = null;
-		_reset();
-	}
 }
 
 /// 执行请求总超时方法包装混合
 /// 可以指定对应操作，并为其设置超时时长
-mixin RequestTotalTimeoutCaller implements RequestOperatorMixBase {
+mixin _RequestTotalTimeoutCaller implements _RequestOperatorMixBase {
 	/// 在总超时时间内没有完成请求，返回错误响应结果
 	Future<PassResponse> runInTotalTimeout(Future<PassResponse> call) {
 		if (_requestOptions.totalTimeout != null) {
@@ -518,7 +523,7 @@ mixin RequestTotalTimeoutCaller implements RequestOperatorMixBase {
 
 /// 填充 `PassHttpClient` 的超时时间混合
 /// 用于填充 `PassHttpClient` 超时时间字段
-mixin RequestTimeoutFiller implements RequestOperatorMixBase {
+mixin _RequestTimeoutFiller implements _RequestOperatorMixBase {
 	/// 填充紧迫超时时间
 	/// 设置当前超时时间为: 连接超时 + 读写超时 + 200ms 额外处理时间
 	void fillTightTimeout(PassHttpClient client) {
@@ -567,7 +572,7 @@ mixin RequestTimeoutFiller implements RequestOperatorMixBase {
 
 /// 执行请求超时方法包装混合
 /// 可以指定对应操作，并为其设置超时时长
-mixin RequestTimeoutCaller implements RequestOperatorMixBase {
+mixin _RequestTimeoutCaller implements _RequestOperatorMixBase {
 	/// 在连接超时时间内完成指定操作，如果超时则抛出异常
 	/// 先用 PassHttpClient 的超时时间，如果 PassHttpClient 不存在，则使用请求中的超时时间
 	Future<T> runInConnectTimeout<T>(Future<T> call) {

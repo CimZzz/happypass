@@ -1,4 +1,5 @@
-import 'http.dart';
+import 'http_responses.dart';
+import 'core.dart';
 import 'adapter/file.dart';
 
 /// `happypass` 快速访问工具类唯一实例
@@ -23,12 +24,19 @@ class HappyPassQuickAccess {
 		RequestPrototype prototype,
 		RequestConfigCallback configCallback
 	}) {
-		return Request.quickGet(
-			url: url,
-			path: path,
-			prototype: prototype,
-			configCallback: configCallback
-		);
+		assert(url != null || path != null || prototype != null);
+		final request = prototype?.spawn() ?? Request();
+		if (url != null) {
+			request.setUrl(url);
+		}
+		if (path != null) {
+			request.addPath(path);
+		}
+		request.GET();
+		if (configCallback != null) {
+			configCallback(request);
+		}
+		return request.doRequest();
 	}
 
 	/// 快速进行一次 POST 请求
@@ -46,13 +54,22 @@ class HappyPassQuickAccess {
 		RequestPrototype prototype,
 		RequestConfigCallback configCallback,
 	}) {
-		return Request.quickPost(
-			url: url,
-			path: path,
-			body: body,
-			prototype: prototype,
-			configCallback: configCallback
-		);
+		assert(url != null || path != null || prototype != null);
+		if(body == null) {
+			return null;
+		}
+		final request = prototype?.spawn() ?? Request();
+		if (url != null) {
+			request.setUrl(url);
+		}
+		if (path != null) {
+			request.addPath(path);
+		}
+		request.POST(body);
+		if (configCallback != null) {
+			configCallback(request);
+		}
+		return request.doRequest();
 	}
 
 	/// 快速下载并保存到指定文件
@@ -76,7 +93,7 @@ class HappyPassQuickAccess {
 			return ErrorPassResponse(msg: errMsg);
 		}
 		
-		final request = prototype?.spawn() ?? Request.construct();
+		final request = prototype?.spawn() ?? Request();
 		if (downloadUrl != null) {
 			request.setUrl(downloadUrl);
 		}

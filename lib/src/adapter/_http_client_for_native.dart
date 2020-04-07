@@ -1,7 +1,8 @@
 import 'dart:io';
+import '../http_proxy.dart';
 import '../http_errors.dart';
+import '../core.dart';
 
-import '../http.dart';
 import '_http_request_for_native.dart';
 import 'http_client.dart' as _httpClient;
 

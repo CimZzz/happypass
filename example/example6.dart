@@ -14,7 +14,7 @@ void main() async {
 		return chain.waitResponse();
 	});
 
-	final result = await Request.quickGet(
+	final result = await happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置一个拦截器
@@ -43,7 +43,7 @@ void main() async {
 	// 下面我们用更多的拦截器，来验证拦截器的工作流程
 	// 给每个拦截器命名，分别在收到请求与收到响应数据时打印信息
 
-	Request.quickGet(
+	happypass.get(
 		url: 'http://www.baidu.com',
 		configCallback: (request) {
 			request.addFirstInterceptor(SimplePassInterceptor((chain) async {

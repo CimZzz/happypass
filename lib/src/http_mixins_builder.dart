@@ -4,7 +4,7 @@ part of 'core.dart';
 
 /// 请求 id 配置混合
 /// 用于配置 Request id
-mixin RequestIdBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestIdBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置请求 id 方法
 	/// 为当前请求设置 id
 	/// * 请求 id 可以在任何时候设置
@@ -17,7 +17,7 @@ mixin RequestIdBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
 
 /// 请求运行代理配置混合
 /// 用于配置 Request 运行代理
-mixin RequestRunProxyBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestRunProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置执行请求的代理方法
 	/// 应在代理接口中直接调用参数中的回调，不做其他任何操作
 	ReturnType setRequestRunProxy(AsyncRunProxy proxy) {
@@ -31,18 +31,15 @@ mixin RequestRunProxyBuilder<ReturnType> implements RequestMixinBase<ReturnType>
 
 /// 请求拦截器配置混合
 /// 用于配置 Request 拦截器
-mixin RequestInterceptorBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制拦截器列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝拦截器列表，只有在修改拦截器列表的时候才会先进行拷贝
-	bool _needCopyInterceptor = false;
-
+mixin _RequestInterceptorBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	
 	/// 拦截器列表
 	List<PassInterceptor> get _passInterceptors {
-		if(_needCopyInterceptor) {
+		if(_requestOptions.needCopyInterceptor) {
 			if(_requestOptions.passInterceptorList != null) {
 				_requestOptions.passInterceptorList = List.from(_requestOptions.passInterceptorList);
 			}
-			_needCopyInterceptor = false;
+			_requestOptions.needCopyInterceptor = false;
 		}
 		return _requestOptions.passInterceptorList ??= [];
 	}
@@ -59,7 +56,7 @@ mixin RequestInterceptorBuilder<ReturnType> implements RequestMixinBase<ReturnTy
 
 /// 请求拦截器清空混合
 /// 用于清空 Request 中所有的拦截器
-mixin RequestInterceptorClearBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestInterceptorClearBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 清空全部拦截器
 	/// 注意的一点是，默认拦截器列表中存在 [BusinessPassInterceptor] 类作为基础的请求处理拦截器
 	ReturnType clearInterceptors() {
@@ -72,18 +69,15 @@ mixin RequestInterceptorClearBuilder<ReturnType> implements RequestMixinBase<Ret
 
 /// 请求头部配置混合
 /// 用于配置 Request 头部
-mixin RequestHeaderBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制头部表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝头部表，只有在修改头部表的时候才会先进行拷贝
-	bool _needCopyHeaderMap = false;
+mixin _RequestHeaderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 
 	/// 头部表
 	Map<String, String> get _header {
-		if(_needCopyHeaderMap) {
+		if(_requestOptions.needCopyHeaderMap) {
 			if(_requestOptions.headerMap != null) {
 				_requestOptions.headerMap = Map.from(_requestOptions.headerMap);
 			}
-			_needCopyHeaderMap = false;
+			_requestOptions.needCopyHeaderMap = false;
 		}
 		return _requestOptions.headerMap ??= {};
 	}
@@ -131,7 +125,7 @@ mixin RequestHeaderBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
 
 /// 请求地址配置混合
 /// 用于配置 Request Url
-mixin RequestUrlBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestUrlBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置请求地址
 	ReturnType setUrl(String url) {
 		if (_requestOptions.checkExecutingStatus) {
@@ -191,7 +185,7 @@ mixin RequestUrlBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
 
 /// 请求方法配置混合
 /// 用于配置 Request Method
-mixin RequestMethodBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestMethodBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置 GET 请求
 	ReturnType GET() {
 		if (_requestOptions.checkExecutingStatus) {
@@ -227,18 +221,15 @@ mixin RequestMethodBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
 
 /// 请求编码器配置混合
 /// 用于配置 Request Encoders
-mixin RequestEncoderBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制编码器列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝编码器列表，只有在修改编码器列表的时候才会先进行拷贝
-	bool _needCopyEncoderList = false;
-
+mixin _RequestEncoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	
 	/// 编码器列表
 	List<HttpMessageEncoder> get _encoders {
-		if(_needCopyEncoderList) {
+		if(_requestOptions.needCopyEncoderList) {
 			if(_requestOptions.encoderList != null) {
 				_requestOptions.encoderList = List.from(_requestOptions.encoderList);
 			}
-			_needCopyEncoderList = false;
+			_requestOptions.needCopyEncoderList = false;
 		}
 		return _requestOptions.encoderList ??= [];
 	}
@@ -288,18 +279,15 @@ mixin RequestEncoderBuilder<ReturnType> implements RequestMixinBase<ReturnType> 
 
 /// 请求解码器配置混合
 /// 用于配置 Request Decoders
-mixin RequestDecoderBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制解码器列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝解码器列表，只有在修改解码器列表的时候才会先进行拷贝
-	bool _needCopyDecoderList = false;
+mixin _RequestDecoderBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 
 	/// 解码器列表
 	List<HttpMessageDecoder> get _decoders {
-		if(_needCopyDecoderList) {
+		if(_requestOptions.needCopyDecoderList) {
 			if(_requestOptions.decoderList != null) {
 				_requestOptions.decoderList = List.from(_requestOptions.decoderList);
 			}
-			_needCopyDecoderList = false;
+			_requestOptions.needCopyDecoderList = false;
 		}
 		return _requestOptions.decoderList ??= [];
 	}
@@ -347,7 +335,7 @@ mixin RequestDecoderBuilder<ReturnType> implements RequestMixinBase<ReturnType> 
 
 /// 请求加密配置快捷混合
 /// 可以帮助我们便捷的配置常用的编解码器
-mixin RequestChannelBuilder<ReturnType> implements RequestDecoderBuilder<ReturnType>, RequestEncoderBuilder<ReturnType> {
+mixin _RequestChannelBuilder<ReturnType> implements _RequestDecoderBuilder<ReturnType>, _RequestEncoderBuilder<ReturnType> {
 	/// 配置 `utf8` 字符串编解码器，形成字符串通道
 	/// 该方法会将之前全部编解码器清空
 	ReturnType stringChannel() {
@@ -377,18 +365,14 @@ mixin RequestChannelBuilder<ReturnType> implements RequestDecoderBuilder<ReturnT
 
 /// 请求响应数据接收进度回调接口配置
 /// 可以用来通知当前响应数据接收进度
-mixin RequestResponseDataUpdateBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制响应数据更新回调列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝响应数据更新回调列表，只有在修改响应数据更新回调列表的时候才会先进行拷贝
-	bool _needCopyResponseDataUpdateList = false;
-
+mixin _RequestResponseDataUpdateBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 响应数据更新回调列表
 	List<HttpResponseDataUpdateCallback> get _responseDataUpdates {
-		if(_needCopyResponseDataUpdateList) {
+		if(_requestOptions.needCopyResponseDataUpdateList) {
 			if(_requestOptions.responseDataUpdateList != null) {
 				_requestOptions.responseDataUpdateList = List.from(_requestOptions.responseDataUpdateList);
 			}
-			_needCopyResponseDataUpdateList = false;
+			_requestOptions.needCopyResponseDataUpdateList = false;
 		}
 		return _requestOptions.responseDataUpdateList ??= [];
 	}
@@ -407,7 +391,7 @@ mixin RequestResponseDataUpdateBuilder<ReturnType> implements RequestMixinBase<R
 /// 可以直接用来接收响应的原始数据
 /// * 一旦设置该回调，就不再执行解码逻辑，默认执行响应数据处理的方法将会从 [ResponseBodyDecoder.analyzeResponse]
 /// * 切换至 [ResponseBodyDecoder.analyzeResponseByReceiver]
-mixin RequestResponseDataReceiverBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestResponseDataReceiverBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 配置接收响应报文原始数据接口
 	ReturnType setResponseRawDataReceiverCallback(HttpResponseRawDataReceiverCallback callback) {
 		if (_requestOptions.checkPrepareStatus) {
@@ -422,18 +406,15 @@ mixin RequestResponseDataReceiverBuilder<ReturnType> implements RequestMixinBase
 
 /// 请求中断配置
 /// 可以立即中断并返回给定的响应结果
-mixin RequestCloserBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制请求中断器列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝请求中断器列表，只有在修改请求中断器列表的时候才会先进行拷贝
-	bool _needCopyRequestCloserList = false;
-
+mixin _RequestCloserBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
+	
 	/// 请求中断器列表
 	Set<RequestCloser> get _requestClosers {
-		if(_needCopyRequestCloserList) {
+		if(_requestOptions.needCopyRequestCloserList) {
 			if(_requestOptions.requestCloserSet != null) {
 				_requestOptions.requestCloserSet = Set.from(_requestOptions.requestCloserSet);
 			}
-			_needCopyRequestCloserList = false;
+			_requestOptions.needCopyRequestCloserList = false;
 		}
 		return _requestOptions.requestCloserSet ??= <RequestCloser>{};
 	}
@@ -446,30 +427,26 @@ mixin RequestCloserBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
 		return returnObj;
 	}
 	
-	/// 清空全部请求中断器
-	ReturnType clearRequestCloser() {
-		if (_requestOptions.checkExecutingStatus) {
-			_requestOptions.requestCloserSet = null;
+	/// 遍历编码器
+	/// 返回 false，中断遍历
+	void forEachRequestCloser(ForeachCallback2<RequestCloser> callback) {
+		if (_requestOptions.requestCloserSet != null) {
+			_requestOptions.requestCloserSet.forEach(callback);
 		}
-		
-		return returnObj;
 	}
 }
 
 /// 请求 Http 代理配置混合
 /// 用来配置请求 Http 代理
-mixin RequestHttpProxyBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
-	/// 判断是否需要复制请求代理列表
-	/// 当请求从请求原型孵化出来时，出于性能优化并未拷贝请求代理列表，只有在修改请求代理列表的时候才会先进行拷贝
-	bool _needCopyHttpProxyList = false;
+mixin _RequestHttpProxyBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 
 	/// 请求代理列表
 	List<PassHttpProxy> get _httpProxies {
-		if(_needCopyHttpProxyList) {
+		if(_requestOptions.needCopyHttpProxyList) {
 			if(_requestOptions.httpProxyList != null) {
 				_requestOptions.httpProxyList = List.from(_requestOptions.httpProxyList);
 			}
-			_needCopyHttpProxyList = false;
+			_requestOptions.needCopyHttpProxyList = false;
 		}
 		return _requestOptions?.httpProxyList ??= [];
 	}
@@ -516,7 +493,7 @@ mixin RequestHttpProxyBuilder<ReturnType> implements RequestMixinBase<ReturnType
 
 /// 配置请求总超时时间
 /// 用于配置请求超时时间
-mixin RequestTotalTimeoutBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestTotalTimeoutBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置请求总超时时间
 	/// 包括拦截器处理耗时也会计算到其中
 	ReturnType setTotalTimeOut(Duration timeOut) {
@@ -529,7 +506,7 @@ mixin RequestTotalTimeoutBuilder<ReturnType> implements RequestMixinBase<ReturnT
 
 /// 配置请求连接超时时间
 /// 用于配置请求连接超时时间
-mixin RequestTimeoutBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestTimeoutBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 	/// 设置连接超时时间
 	ReturnType setConnectTimeOut(Duration timeOut) {
 		if (_requestOptions.checkExecutingStatus) {
@@ -556,7 +533,7 @@ mixin RequestTimeoutBuilder<ReturnType> implements RequestMixinBase<ReturnType> 
 ///
 /// 如需配置以上内容，则要自行在 PassHttpClient 中设置
 ///
-mixin RequestClientBuilder<ReturnType> implements RequestMixinBase<ReturnType> {
+mixin _RequestClientBuilder<ReturnType> implements _RequestMixinBase<ReturnType> {
 
 	/// 设置 PassHttpClient
 	ReturnType setHttpClient(PassHttpClient client) {

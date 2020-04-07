@@ -25,7 +25,7 @@ void method1() async {
 	final requestCloser = RequestCloser();
 
 	// 发送 GET 请求
-	final resultFuture = Request.quickGet(
+	final resultFuture = happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置请求中断器
@@ -45,7 +45,7 @@ void method2() async {
 	requestCloser.close();
 
 	// 发送 GET 请求
-	final resultFuture = Request.quickGet(
+	final resultFuture = happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置请求中断器
@@ -60,7 +60,7 @@ void method3() async {
 	final requestCloser = RequestCloser();
 
 	// 发送 GET 请求
-	final resultFuture = Request.quickGet(
+	final resultFuture = happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置请求中断器
@@ -77,7 +77,7 @@ void method4() async {
 	final requestCloser = RequestCloser();
 
 	// 发送 GET 请求
-	final resultFuture = Request.quickGet(
+	final resultFuture = happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置请求中断器
@@ -101,7 +101,7 @@ void method5() async {
 	final requestCloser5 = RequestCloser();
 
 	// 发送 GET 请求
-	final resultFuture = Request.quickGet(
+	final resultFuture = happypass.get(
 		url: 'https://www.baidu.com',
 		configCallback: (request) {
 			// 配置多个请求中断器
@@ -136,11 +136,11 @@ void method6() async {
 	};
 
 	// 发送多个 GET 请求
-	final resultFuture1 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture2 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture3 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture4 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture5 = Request.quickGet(prototype: prototype, configCallback: configCallback);
+	final resultFuture1 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture2 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture3 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture4 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture5 = happypass.get(prototype: prototype, configCallback: configCallback);
 
 	// 请求开始后中断请求
 	requestCloser.close(finishResponse: ErrorPassResponse(msg: 'interrupt request after call'));
@@ -184,11 +184,11 @@ void method7() async {
 	};
 
 	// 发送多个 GET 请求
-	final resultFuture1 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture2 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture3 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture4 = Request.quickGet(prototype: prototype, configCallback: configCallback);
-	final resultFuture5 = Request.quickGet(prototype: prototype, configCallback: configCallback);
+	final resultFuture1 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture2 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture3 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture4 = happypass.get(prototype: prototype, configCallback: configCallback);
+	final resultFuture5 = happypass.get(prototype: prototype, configCallback: configCallback);
 
 	// 请求开始后中断请求
 	requestCloser.close();

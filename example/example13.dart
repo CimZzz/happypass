@@ -4,9 +4,9 @@ import 'package:happypass/happypass.dart';
 
 /// 本示例演示了如何使用 [MultipartDataBody] 传递 `Multipart` 表单数据
 void main() async {
-	// 这次我们使用 [Request.quickPost] 方法快速发起 `POST` 请求
+	// 这次我们使用快速发起 `POST` 请求
 	// 使用 `MultipartDataBody` 作为请求体
-	final result = await Request.quickPost(
+	final result = await happypass.post(
 		url: 'xxxx',
 		body: MultipartDataBody()
 		// 添加文本

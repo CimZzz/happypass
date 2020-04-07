@@ -63,7 +63,6 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		if(_isClosed) {
 			throw const HappyPassError('HttpRequest is closed');
 		}
-		_isClosed = true;
 		 final rawResponse = await _request.close();
 		 if(rawResponse != null) {
 		 	return PassHttpResponse (
@@ -80,7 +79,10 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 	void close() {
 		if(!_isClosed) {
 			_isClosed = true;
-			_request.close();
+			// 屏蔽报错
+			_request.close().catchError((e) {
+			
+			});
 		}
 	}
 }
