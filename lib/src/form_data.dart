@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:happypass/happypass.dart';
+import 'http.dart';
 
 /// 表单请求数据体
 /// 对应使用的 Content-Type 为 'application/x-www-form-urlencoded'

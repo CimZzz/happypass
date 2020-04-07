@@ -1,5 +1,3 @@
-part of 'http.dart';
-
 /// Http 代理对象
 /// 用来指定 Http 代理
 class PassHttpProxy {

@@ -1,4 +1,4 @@
-part of 'http.dart';
+import 'dart:convert';
 
 /// Http 消息解码器基类
 abstract class HttpMessageDecoder {
@@ -7,18 +7,6 @@ abstract class HttpMessageDecoder {
 	dynamic decode(dynamic message);
 }
 
-/// GZip 解码器
-class Byte2GZipDecoder extends HttpMessageDecoder {
-	const Byte2GZipDecoder();
-
-	@override
-	dynamic decode(dynamic message) {
-		if (message is List<int>) {
-			return gzip.decode(message);
-		}
-		return message;
-	}
-}
 
 /// Byte - Utf8 字符串解码器
 class Byte2Utf8StringDecoder extends HttpMessageDecoder {

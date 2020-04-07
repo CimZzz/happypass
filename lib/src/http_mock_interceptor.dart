@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'package:happypass/happypass.dart';
+import 'http.dart';
 
 /// 模拟拦截回调的构造器
 typedef MockBuilderCallback = Map<String, dynamic> Function(MockClientBuilder builder);

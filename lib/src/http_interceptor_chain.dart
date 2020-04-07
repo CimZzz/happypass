@@ -1,13 +1,6 @@
-part of 'http.dart';
-
-
-typedef HttpClientBuilder = HttpClient Function(ChainRequestModifier modifier);
-
-typedef HttpReqBuilder = Future<HttpClientRequest> Function(HttpClient client, ChainRequestModifier modifier);
-
-typedef HttpReqInfoBuilder = Future<PassResponse> Function(HttpClientRequest httpReq, ChainRequestModifier modifier);
-
-typedef ResponseBuilder = Future<PassResponse> Function(HttpClientRequest httpReq, ChainRequestModifier modifier);
+import 'request_builder.dart';
+import 'http_responses.dart';
+import 'http_interceptors.dart';
 
 /// 拦截器处理链
 /// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
@@ -31,17 +24,17 @@ class PassInterceptorChain {
 	PassInterceptorChain._(Request request)
 		: assert(request != null),
 			_chainRequestModifier = ChainRequestModifier(request),
-			_interceptors = request._passInterceptorList,
-			_totalInterceptorCount = request._passInterceptorList.length ?? 0;
+			_interceptors = request.getPassInterceptors(),
+			_totalInterceptorCount = request.getPassInterceptorCount();
 	
 	final ChainRequestModifier _chainRequestModifier;
 	final List<PassInterceptor> _interceptors;
 	final int _totalInterceptorCount;
 	int _currentIdx = -1;
 	
-	Future<ResultPassResponse> _intercept() async {
+	Future<ResultPassResponse> intercept() async {
 		// 首次将 `ChainRequestModifier` 装配给 `RequestCloser`（请求中断器）
-		_chainRequestModifier._assembleCloser(_chainRequestModifier);
+		_chainRequestModifier.assembleCloser(_chainRequestModifier);
 		// 如果请求在执行前已经被中断，则直接返回中断的响应结果
 		if (_chainRequestModifier.isClosed) {
 			final response = _chainRequestModifier._finishResponse;

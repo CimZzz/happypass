@@ -1,18 +1,13 @@
-import '_multi_part_for_native.dart'
-if (dart.library.html) '_multi_part_for_html.dart' as _httpResponse;
-
-import 'dart:io'
-if (dart.library.html) 'dart:html' as _platform;
-
+/// Http 原始 Response 的包装类
+/// 为了跨平台而设计，提供通用的访问响应数据的方法
 abstract class PassHttpResponse {
-	
 	/// 响应状态码
 	int get statusCode;
 	
-	/// Content-Length
+	/// 响应数据长度
 	int get contentLength;
-	
-	/// 数据流
+
+	/// 响应数据流
 	Stream<List<int>> get bodyStream;
 	
 	/// 获取 Http 响应头部

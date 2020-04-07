@@ -1,4 +1,5 @@
-part of 'http.dart';
+import 'http_responses.dart';
+import 'request_builder.dart';
 
 /// 请求中断响应结果选择回调
 typedef RequestCloserResponseChooseCallback = ResultPassResponse Function(ChainRequestModifier modifier);

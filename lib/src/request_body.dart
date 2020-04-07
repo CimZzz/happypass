@@ -1,5 +1,3 @@
-part of 'http.dart';
-
 /// 原始请求 Body 数据
 /// 该对象不会被编码器进行编码
 class RawBodyData {

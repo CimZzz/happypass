@@ -2,9 +2,13 @@ import 'dart:io';
 
 import 'http_response.dart' as _httpResponse;
 
+/// Http 响应数据 Native 端实现
+/// 使用的头部 Map 是 `HttpHeaders`
+/// 数据流则是 `HttpClientResponse` 自身
 class PassHttpResponse implements _httpResponse.PassHttpResponse {
 	
 	PassHttpResponse(this._statusCode, this._headers, this._bodyStream) {
+		// 通过头部取得 Content-Length
 		final contentLengthStr = _convertHeaderListToString(_headers['content-length']);
 		if(contentLengthStr != null) {
 			_contentLength = int.tryParse(contentLengthStr) ?? 0;
@@ -33,6 +37,7 @@ class PassHttpResponse implements _httpResponse.PassHttpResponse {
 	
 	/// 获取 Http 响应头部
 	String getResponseHeader(String key) => _convertHeaderListToString(_headers[key]);
+
 
 	String _convertHeaderListToString(List<String> headerList) {
 		if(headerList == null) {

@@ -1,51 +1,62 @@
-import 'dart:html';
-import 'package:happypass/src/http.dart';
+import '../http.dart';
+import 'http_client.dart';
+import 'http_request.dart';
 
 import 'request_process.dart' as _processor;
 
 final HttpProcessor processor = HttpProcessor();
 
 class HttpProcessor implements _processor.HttpProcessor {
-	
+
+	/// Html 中 HttpClient 无实际意义，只是用来创建请求
+	/// 只有 PassHttpRequest 作为实际意义上的请求对象
 	@override
 	Future<PassResponse> request(ChainRequestModifier modifier) async {
+		PassHttpRequest httpReq;
 		try {
-			String method;
-			String contentType;
-			dynamic body;
-			switch(modifier.getRequestMethod()) {
-				case RequestMethod.POST:
-					method = 'POST';
-					break;
-				default:
-					method = 'GET';
-					break;
+			final chainRequestModifier = modifier;
+			if (chainRequestModifier.isClosed) {
+				// 如果请求已经取消，则直接返回 null
+				return null;
 			}
-			
-			// 开启 XMLHttpRequest
-			final xhr = HttpRequest();
-			xhr.open(method, modifier.getUrl());
-			// 处理 Request Body
-			body = modifier.getRequestBody();
-			
-			// POST 方法的 body 不能为 null
-			if (body == null) {
-				return ErrorPassResponse(msg: '[POST] \'body\' 不能为 \'null\'');
+			final url = chainRequestModifier.getUrl();
+			final method = chainRequestModifier.getRequestMethod();
+
+			httpReq = await PassHttpClient().fetchHttpRequest(method, url);
+			// 装配 `PassHttpRequest`，保证中断器可以正常中断请求
+			chainRequestModifier.assembleHttpRequest(httpReq);
+
+			if (chainRequestModifier.isClosed) {
+				// 如果请求已经取消，则直接返回 null
+				return null;
 			}
-			
-			if(body is RequestBody) {
-				contentType = body.contentType;
-				if (contentType != null) {
-					final overrideContentType = body.overrideContentType;
-					if (overrideContentType == true || modifier.getRequestHeader('content-type') == null) {
-						httpReq.headers.set('content-type', contentType);
-					}
-				}
+
+			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier);
+			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, chainRequestModifier);
+
+			// 等待填充头部和填充请求 Body 完成
+			await fillHeaderFuture;
+			await fillBodyFuture;
+
+			PassResponse response;
+			if (chainRequestModifier.existResponseRawDataReceiverCallback()) {
+				// 如果存在响应数据原始接收回调
+				// 执行 [analyzeResponseByReceiver] 方法
+				// 限制在读取超时时间内解析完成 `HttpClientResponse`
+				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponseByReceiver(httpReq, modifier));
+			} else {
+				// 执行 [analyzeResponse] 方法
+				// 限制在读取超时时间内解析完成 `HttpClientResponse`
+				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(httpReq, modifier));
 			}
-			
+			httpReq = null;
+
+			return response ?? ErrorPassResponse(msg: '未能成功解析 Response');
 		} catch (e, stackTrace) {
+			print(stackTrace);
 			return ErrorPassResponse(msg: '请求发生异常: $e', error: e, stacktrace: stackTrace);
 		} finally {
+			httpReq?.close();
 		}
 	}
 }

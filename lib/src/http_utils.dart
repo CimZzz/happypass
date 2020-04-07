@@ -1,5 +1,3 @@
-part of 'http.dart';
-
 /// Http Url
 /// 将 url 解析成一系列组成部分
 class PassResolveUrl {

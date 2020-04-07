@@ -1,44 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'http_errors.dart';
 import 'adapter/request_process.dart';
+import 'adapter/http_client.dart';
+import 'adapter/http_request.dart';
+import 'adapter/http_response.dart';
 
-part 'http_closer.dart';
-
-part 'http_cookie_manager.dart';
-
-part 'http_decoders.dart';
-
-part 'http_encoders.dart';
-
-part 'http_interceptors.dart';
-
-part 'http_mixins.dart';
-
-part 'http_mixins_builder.dart';
-
-part 'http_mixins_getter.dart';
-
-part 'http_mixins_operator.dart';
-
-part 'http_mixins_response.dart';
-
-part 'http_proxy.dart';
-
-part 'http_responses.dart';
-
-part 'http_utils.dart';
-
-part 'request_body.dart';
-
-part 'http_interceptor_chain.dart';
 
 /// 请求状态
 /// 1. Prepare 准备状态，在这个阶段中对请求进行一些配置
 /// 2. Executing 执行状态，表示该请求正在执行中，但还没有获得结果
 /// 3. Executed 执行结束状态，请求任务已经完成
-enum _RequestStatus { Prepare, Executing, Executed }
+enum RequestStatus { Prepare, Executing, Executed }
 
 /// 请求方法
 /// 1. GET 请求
@@ -81,16 +55,16 @@ class Request extends _BaseRequest {
 	}
 
 	/// 表示当前请求状态
-	_RequestStatus _status = _RequestStatus.Prepare;
+	RequestStatus _status = RequestStatus.Prepare;
 
 	/// 检查当前状态是否处于准备状态
 	/// 在这个状态下可以修改全部配置
-	bool get checkPrepareStatus => _status.index == _RequestStatus.Prepare.index;
+	bool get checkPrepareStatus => _status.index == RequestStatus.Prepare.index;
 
 	/// 检查当前状态是否处于执行中状态
 	/// 这里的执行中并不是真正执行，该状态表示 Request 已经交由拦截链处理，并未真正生成 Response
 	/// 在这个状态下可以修改大部分配置
-	bool get checkExecutingStatus => _status.index <= _RequestStatus.Executing.index;
+	bool get checkExecutingStatus => _status.index <= RequestStatus.Executing.index;
 
 	/// 请求完成 Future
 	Completer<ResultPassResponse> _requestCompleter;
@@ -149,10 +123,6 @@ class Request extends _BaseRequest {
 	/// 请求中断器
 	Set<RequestCloser> _requestCloserSet;
 
-	/// Cookie 管理器
-	/// 该对象在克隆时，将会传递引用而不是实例化一个新的对象
-	CookieManager _cookieManager;
-
 	/// 请求 Http 代理
 	List<PassHttpProxy> _httpProxyList;
 
@@ -166,15 +136,18 @@ class Request extends _BaseRequest {
 	/// 请求读取超时时间
 	Duration _readTimeout;
 
+	/// HttpClient
+	PassHttpClient _passHttpClient;
+
 	/// 执行请求
-	/// 只有在 [_RequestStatus.Prepare] 状态下才会实际发出请求
+	/// 只有在 [RequestStatus.Prepare] 状态下才会实际发出请求
 	/// 其余条件下均返回第一次执行时的 Future
 	Future<ResultPassResponse> doRequest() {
-		if (_status != _RequestStatus.Prepare) {
+		if (_status != RequestStatus.Prepare) {
 			return _requestCompleter.future;
 		}
 
-		_status = _RequestStatus.Executing;
+		_status = RequestStatus.Executing;
 		_requestCompleter = Completer();
 		_requestCompleter.complete(_execute());
 		return _requestCompleter.future;
@@ -212,7 +185,6 @@ class Request extends _BaseRequest {
 		if (_decoderList != null) {
 			cloneObj._decoderList = List.from(_decoderList);
 		}
-		cloneObj._cookieManager = _cookieManager;
 
 		if (_httpProxyList != null) {
 			cloneObj._httpProxyList = List.from(_httpProxyList);
@@ -221,6 +193,8 @@ class Request extends _BaseRequest {
 		cloneObj._totalTimeout = _totalTimeout;
 		cloneObj._connectTimeout = _connectTimeout;
 		cloneObj._readTimeout = _readTimeout;
+
+		cloneObj._passHttpClient = _passHttpClient;
 
 		return cloneObj;
 	}

@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'package:happypass/happypass.dart';
+import 'request_body.dart';
 
 /// 流请求数据体
 /// 会将流的数据作为请求数据

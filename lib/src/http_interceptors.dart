@@ -1,4 +1,6 @@
-part of 'http.dart';
+import 'dart:async';
+import 'http_interceptor_chain.dart';
+import 'http_responses.dart';
 
 /// 请求拦截器
 /// 用来接收并处理 Request

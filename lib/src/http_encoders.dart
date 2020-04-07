@@ -1,23 +1,12 @@
-part of 'http.dart';
+
+
+import 'dart:convert';
 
 /// Http 消息编码器基类
 abstract class HttpMessageEncoder {
 	const HttpMessageEncoder();
 
 	dynamic encode(dynamic message);
-}
-
-/// GZip 编码器
-class GZip2ByteEncoder extends HttpMessageEncoder {
-	const GZip2ByteEncoder();
-
-	@override
-	dynamic encode(dynamic message) {
-		if (message is List<int>) {
-			return gzip.encode(message);
-		}
-		return message;
-	}
 }
 
 /// Utf8 字符串 - Byte 编码器
