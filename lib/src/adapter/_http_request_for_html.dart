@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html';
 import 'dart:typed_data';
 import '../http_errors.dart';
@@ -33,6 +34,15 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		// 请求完成回调接口
 		_request.onLoad.first.then((_) {
 			if(!_completer.isCompleted) {
+				if(_request.response is String) {
+					_isClosed = true;
+					_completer.complete(PassHttpResponse(
+						_request.status,
+						_request.responseHeaders,
+						Stream.value(utf8.encode(_request.response))
+					));
+					return;
+				}
 				final blob = _request.response ?? Blob([]);
 				final reader = FileReader();
 				reader.onLoad.first.then((_) {

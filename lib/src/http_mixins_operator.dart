@@ -137,8 +137,8 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase, _RequestEncoder {
 					message = await encodeMessage(message, useProxy: useProxy);
 				}
 
-				if (httpReq.checkDataLegal(message)) {
-					throw const HappyPassError('请求 \'body\' 数据类型非法');
+				if (!httpReq.checkDataLegal(message)) {
+					throw HappyPassError('请求 \'body\' 数据类型非法: ${message.runtimeType}');
 				}
 
 				if(sendOnce) {
@@ -175,8 +175,8 @@ mixin _RequestBodyFiller implements _RequestOperatorMixBase, _RequestEncoder {
 				message = await encodeMessage(message, useProxy: useProxy);
 			}
 
-			if (httpReq.checkDataLegal(message)) {
-				throw const HappyPassError('请求 \'body\' 数据类型非法');
+			if (!httpReq.checkDataLegal(message)) {
+				throw HappyPassError('请求 \'body\' 数据类型非法: ${message.runtimeType}');
 			}
 
 			httpReq.sendData(message);

@@ -5,12 +5,7 @@ import '../core.dart';
 import '_http_request_for_html.dart';
 import 'http_client.dart' as _httpClient;
 
-
-final kHttpClient = PassHttpClient();
-
 class PassHttpClient implements _httpClient.PassHttpClient {
-	
-	factory PassHttpClient() => kHttpClient;
 
 	/// 连接超时时间
 	/// * 只在 Native 端生效
