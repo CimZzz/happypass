@@ -1,8 +1,11 @@
+import 'adapter/http_client.dart';
+import 'adapter/http_request.dart';
+import 'adapter/request_process.dart';
 import 'core.dart';
+import 'http_closer.dart';
+import 'request_builder.dart';
 import 'http_responses.dart';
 import 'http_interceptors.dart';
-
-import 'adapter/request_process.dart';
 
 /// 拦截器处理链
 /// 通过该类完成拦截器的全部工作: 拦截 -> 修改请求 -> 完成请求 -> 返回响应的操作
@@ -25,26 +28,34 @@ import 'adapter/request_process.dart';
 class PassInterceptorChain {
 	PassInterceptorChain(Request request)
 		: assert(request != null),
-			_chainRequestModifier = ChainRequestModifier(request),
+			_chainRequestModifier = ChainRequestModifier._(request),
 			_interceptors = request.getPassInterceptors(),
 			_totalInterceptorCount = request.getPassInterceptorCount();
 	
 	final ChainRequestModifier _chainRequestModifier;
 	final List<PassInterceptor> _interceptors;
 	final int _totalInterceptorCount;
+	final RequestCloseScope _closeScope = RequestCloseScope();
 	int _currentIdx = -1;
 	
 	Future<ResultPassResponse> intercept() async {
-		// 首次将 `ChainRequestModifier` 装配给 `RequestCloser`（请求中断器）
-		_chainRequestModifier.assembleCloser(_chainRequestModifier);
+		_closeScope.assembleModifier(_chainRequestModifier);
+		final requestOptions = RequestOptions.fetch(_chainRequestModifier);
+		// 注册请求中断执行域
+		_closeScope.registerRequestCloser(requestOptions.requestCloserSet);
 		// 如果请求在执行前已经被中断，则直接返回中断的响应结果
-		if (_chainRequestModifier.isClosed) {
-			final response = _chainRequestModifier.getFinishResponse();
-			_chainRequestModifier.finish();
-			return response;
+		if (_closeScope.isClosed) {
+			// 中断后注销
+			_closeScope.unregisterRequestCloser(requestOptions.requestCloserSet);
+			return _closeScope.finishResponse;
 		}
-		final response = await _chainRequestModifier.requestProxy(_chainRequestModifier.runInTotalTimeout(_waitResponse(0)));
-		_chainRequestModifier.finish();
+		
+		final response = await _closeScope.startScopeRun(
+			_chainRequestModifier.runInTotalTimeout(_waitResponse(0)),
+			() => _chainRequestModifier._markClosed()
+		);
+		// 请求结束后注销
+		_closeScope.unregisterRequestCloser(requestOptions.requestCloserSet);
 		// 没有生成 Response，表示拦截器将请求
 		if (response == null) {
 			return ErrorPassResponse(msg: '未能生成 Response');
@@ -79,8 +90,9 @@ class PassInterceptorChain {
 	
 	/// 等待其他拦截器返回 `Response`
 	Future<PassResponse> waitResponse() async {
-		if (modifier.isClosed) {
+		if (_closeScope.isClosed) {
 			// 如果请求已经取消，则直接返回 null
+			// 中断之后，拦截链的结果将被忽略
 			return null;
 		}
 		return await _waitResponse(_currentIdx + 1);
@@ -89,5 +101,45 @@ class PassInterceptorChain {
 	/// 实际执行 `Request` 获得 `Response`
 	Future<PassResponse> requestForPassResponse() async {
 		return await HttpProcessor().request(modifier);
+	}
+}
+
+
+/// 拦截链请求修改器
+/// 可以在拦截过程中对请求进行一些修改
+class ChainRequestModifier extends RequestBuilder<ChainRequestModifier> with
+	RequestOptionMixin<ChainRequestModifier>,
+	RequestBodyMixin<ChainRequestModifier>,
+	RequestOperatorMixin<ChainRequestModifier> {
+	ChainRequestModifier._(Request request): super.copyByOther(request);
+	
+	PassHttpClient _client;
+	PassHttpRequest _httpRequest;
+	bool _isClosed = false;
+	bool get isClosed => _isClosed;
+	
+	void _markClosed() {
+		_isClosed = true;
+		_httpRequest?.close();
+		_client?.close();
+		_httpRequest = null;
+		_client = null;
+	}
+	
+	/// 装配 PassHttpClient，用来强制中断逻辑
+	void assembleHttpClient(PassHttpClient client) {
+		if (_isClosed) {
+			client.close();
+			return;
+		}
+		_client = client;
+	}
+	
+	/// 装配 PassHttpRequest，用来强制中断逻辑
+	void assembleHttpRequest(PassHttpRequest httpRequest) {
+		_httpRequest = httpRequest;
+		if (_isClosed) {
+			httpRequest.close();
+		}
 	}
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'core.dart';
+import 'request_builder.dart';
 import 'http_responses.dart';
 import 'http_interceptor_chain.dart';
 import 'http_interceptors.dart';

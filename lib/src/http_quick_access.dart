@@ -1,5 +1,6 @@
 import 'http_responses.dart';
 import 'core.dart';
+import 'request_builder.dart';
 import 'adapter/file.dart';
 
 /// `happypass` 快速访问工具类唯一实例

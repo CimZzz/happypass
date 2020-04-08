@@ -1,4 +1,4 @@
-import '../core.dart';
+import '../http_interceptor_chain.dart';
 import '../http_responses.dart';
 import '_request_process_for_native.dart'
 if (dart.library.html) '_request_process_for_html.dart' as _processor;

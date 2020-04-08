@@ -1,4 +1,4 @@
-import '../core.dart';
+import '../http_interceptor_chain.dart';
 import '../http_responses.dart';
 
 import 'http_client.dart';
@@ -49,8 +49,8 @@ class HttpProcessor implements _processor.HttpProcessor {
 				return null;
 			}
 			
-			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, chainRequestModifier, useProxy: false);
-			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, chainRequestModifier, useProxy: false, sendOnce: true);
+			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, useProxy: false);
+			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, useProxy: false, sendOnce: true);
 
 			// 等待填充头部和填充请求 Body 完成
 			await fillHeaderFuture;
@@ -61,11 +61,11 @@ class HttpProcessor implements _processor.HttpProcessor {
 				// 如果存在响应数据原始接收回调
 				// 执行 [analyzeResponseByReceiver] 方法
 				// 限制在读取超时时间内解析完成 `HttpClientResponse`
-				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponseByReceiver(httpReq, modifier));
+				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponseByReceiver(httpReq));
 			} else {
 				// 执行 [analyzeResponse] 方法
 				// 限制在读取超时时间内解析完成 `HttpClientResponse`
-				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(httpReq, modifier));
+				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(httpReq));
 			}
 			httpReq = null;
 			

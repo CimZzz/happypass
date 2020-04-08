@@ -6,11 +6,21 @@ export 'src/adapter/http_client.dart';
 export 'src/adapter/http_request.dart';
 export 'src/adapter/http_response.dart';
 export 'src/adapter/multi_part.dart';
-
-
-export 'src/core.dart';
+export 'src/core.dart' show
+RequestMethod,
+AsyncRunProxyCallback,
+AsyncRunProxy,
+HttpResponseDataUpdateCallback,
+HttpResponseRawDataReceiverCallback,
+RequestConfigCallback,
+ForeachCallback,
+ForeachCallback2,
+HttpHeaderForeachCallback,
+FutureBuilder,
+RequestBodyEncodeCallback;
+export 'src/request_builder.dart';
 export 'src/form_data.dart';
-export 'src/http_closer.dart';
+export 'src/http_closer.dart' show RequestCloser;
 export 'src/http_decoders.dart';
 export 'src/http_encoders.dart';
 export 'src/http_errors.dart';
