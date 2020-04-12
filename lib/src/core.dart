@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'adapter/http_client.dart';
 import 'adapter/http_request.dart';
@@ -901,11 +902,13 @@ mixin RequestOperatorMixin<ReturnType> on RequestOptionMixin<ReturnType> {
 	/// - useEncode: 是否对数据进行编码
 	/// - useProxy: 是否在编码的过程中使用请求执行代理
 	/// - sendOnce: 是否只发送一次数据（如果该值为 true，那么会将数据体中全部数据收集起来，之后统一发送），并且消息的数据类型为同种类型
-	Future<void> fillRequestBody(PassHttpRequest httpReq, {bool useEncode = true, bool useProxy = true, bool sendOnce = false}) async {
+	Future<void> fillRequestBody(PassHttpRequest httpReq, {bool useEncode = true, bool useProxy = true}) async {
 		dynamic body = getRequestBody();
 		if (body == null) {
 			return;
 		}
+		
+		final sendOnce = !httpReq.isAllowDataSegment();
 		
 		if (body is RequestBody) {
 			// 当请求体是 RequestBody 时，会覆盖 Content-Type 字段
@@ -933,12 +936,7 @@ mixin RequestOperatorMixin<ReturnType> on RequestOptionMixin<ReturnType> {
 				
 				if(sendOnce) {
 					messageCacheList ??= [];
-					if(message is List) {
-						messageCacheList.addAll(message);
-					}
-					else {
-						messageCacheList.add(message);
-					}
+					messageCacheList.add(message);
 				}
 				else {
 					httpReq.sendData(message);

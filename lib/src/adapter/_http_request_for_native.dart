@@ -33,9 +33,6 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 
 	/// 发送数据
 	/// - 在 Native 中，data 类型应为 `List<int>`
-	/// - 在 Html 中，data 类型应为 `Blob` 或 `List<int>`
-	///
-	/// 由于 Html 无法分段发送，所以该方法只能调用一次；在 Native 中无限制
 	///
 	/// * [checkDataLegal] 方法就是用来检查数据是否合法
 	@override
@@ -43,6 +40,7 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		if(_isClosed) {
 			throw const HappyPassError('HttpRequest is closed');
 		}
+		
 		if(checkDataLegal(data)) {
 			_request.add(data);
 		}
@@ -73,7 +71,11 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		 }
 		 return null;
 	}
-
+	
+	
+	/// 判断是否允许数据分段发送
+	bool isAllowDataSegment() => true;
+	
 	/// 关闭请求
 	@override
 	void close() {

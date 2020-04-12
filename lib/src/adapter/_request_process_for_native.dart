@@ -50,7 +50,7 @@ class HttpProcessor implements _processor.HttpProcessor {
 			}
 			
 			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, useProxy: false);
-			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, useProxy: false, sendOnce: true);
+			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, useProxy: false);
 
 			// 等待填充头部和填充请求 Body 完成
 			await fillHeaderFuture;

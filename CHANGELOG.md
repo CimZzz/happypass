@@ -117,3 +117,6 @@
 ## 2.0.0-pre-3
 - 测试 2.0 版本
 - 修复 Html HttpClient 的 bug
+
+## 2.0.0-pre-4
+- 修复 body 类型非法问题

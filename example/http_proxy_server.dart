@@ -31,19 +31,20 @@ Future<void> thread(Socket socket) async {
 		if(dest == null) {
 			dest = await Socket.connect('49.234.99.78', 80);
 			dest.listen((event) {
-				var str = String.fromCharCodes(event);
+				var str = utf8.decode(event);
 				final idx = str.indexOf('Server: ');
 				if(idx != -1) {
 					str = str.replaceAll('Server: ', 'Access-Control-Allow-Origin: *\r\nServer: ');
 				}
 				print(str);
-				socket.add(utf8.encode(str));
+				socket.add(event);
 				socket.flush();
 			}, onDone: () {
 				print('completed remote!');
 				dest = null;
 			});
 		}
+		print(utf8.decode(event));
 		dest.add(event);
 		dest.flush();
 	}, onDone: () {

@@ -135,37 +135,32 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 		
 		return this;
 	}
-	
 	@override
 	Stream<dynamic> provideBodyData() async* {
 		final multiDataList = _multiDataList;
 		if (multiDataList == null) {
 			yield null;
 		}
-		
 		final length = multiDataList.length;
 		for (var i = 0; i < length; i++) {
 			final multiData = multiDataList[i];
-			var contentHeader = '--$_multipartBoundary\r\nContent-Disposition: form-data; name=\'${multiData.name}\'';
+			var contentHeader = '--$_multipartBoundary\r\nContent-Disposition: form-data; name=\"${multiData.name}\"';
 			if (multiData.fileName != null) {
-				contentHeader += '; filename=\'${multiData.fileName}\'';
+				contentHeader += '; filename=\"${multiData.fileName}\"';
 			}
 			contentHeader += '\r\n';
 			if (multiData.data is Stream) {
 				contentHeader += 'Content-Type: ${multiData.contentType ?? false}\r\n';
 			}
 			contentHeader += '\r\n';
-			
 			yield RawBodyData(rawData: utf8.encode(contentHeader));
 			if (multiData.data is Stream) {
 				yield* multiData.data;
 			} else {
 				yield multiData.data;
 			}
-			
 			yield RawBodyData(rawData: utf8.encode('\r\n'));
 		}
-		
 		yield RawBodyData(rawData: utf8.encode('--$_multipartBoundary--'));
 	}
 	
