@@ -1,10 +1,9 @@
+import 'dart:math';
+
 import '../request_body.dart';
 
 import '_multi_part_for_native.dart'
 if (dart.library.html) '_multi_part_for_html.dart' as _multipart;
-
-import 'dart:io'
-if (dart.library.html) 'dart:html' as _platform;
 
 
 /// Multipart 请求数据体
@@ -31,8 +30,9 @@ abstract class MultipartDataBody extends RequestBody {
 	MultipartDataBody addMultipartText(String name, String text, {String fileName, String contentType});
 	
 	/// 添加文件 Multipart 数据
+	/// 注意，file 类型必须为 `File`，否则会抛出异常
 	MultipartDataBody addMultipartFile(String name,
-		_platform.File file, {
+		covariant dynamic file, {
 			String fileName,
 			String contentType,
 		});
@@ -41,4 +41,65 @@ abstract class MultipartDataBody extends RequestBody {
 	/// - 在 Native 中，stream 为 Stream 对象
 	/// - 在 Html 中，stream 对象为 Blob 对象
 	MultipartDataBody addMultipartStream(String name, covariant dynamic stream, {String fileName, String contentType});
+}
+
+final _baseStr = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/// 生成随机的 Boundary 字符串
+String randomBoundary() {
+	final random = Random();
+	var str = '';
+	for (var i = 0; i < 15; i++) {
+		var idx = random.nextInt(62);
+		str += _baseStr[idx];
+	}
+	return str;
+}
+
+/// 获取缺省的 `ContentType`
+String getDefaultContentType(String fileName) {
+	if (fileName == null) {
+		return null;
+	}
+
+	final postfixIdx = fileName.lastIndexOf('.');
+	if (postfixIdx == -1) {
+		return null;
+	}
+
+	final postfix = fileName.substring(postfixIdx + 1);
+
+	switch (postfix) {
+		case 'txt':
+			return 'text/plain';
+		case 'jpeg':
+			return 'image/jpeg';
+		case 'jpg':
+			return 'image/jpeg';
+		case 'png':
+			return 'image/png';
+		case 'json':
+			return 'application/json';
+		case 'md':
+			return 'text/markdown';
+		case 'zip':
+			return 'application/zip';
+		case 'js':
+			return 'text/javascript';
+		case 'mp4':
+			return 'video/mp4';
+		default:
+			return null;
+	}
+}
+
+
+/// Multipart 子数据
+class MultiData {
+	MultiData({this.name, this.data, this.fileName, this.contentType});
+
+	final String name;
+	final Object data;
+	final String fileName;
+	final String contentType;
 }

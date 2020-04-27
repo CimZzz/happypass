@@ -28,10 +28,6 @@ abstract class PassHttpRequest {
 	/// `PassHttpResponse` 已经对跨平台做了兼容
 	Future<PassHttpResponse> fetchHttpResponse();
 	
-	/// 判断是否允许数据分段发送
-	/// 由于 Html 无法分段发送，所以该方法只能调用一次；在 Native 中无限制
-	bool isAllowDataSegment();
-	
 	/// 关闭请求
 	void close();
 }

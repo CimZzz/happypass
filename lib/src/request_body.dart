@@ -3,7 +3,7 @@
 class RawBodyData {
 	const RawBodyData({this.rawData});
 
-	final List<int> rawData;
+	final dynamic rawData;
 }
 
 /// 请求体

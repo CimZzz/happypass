@@ -1,4 +1,4 @@
-import 'package:happypass/src/http_quick_access.dart';
+import 'package:happypass/happypass.dart';
 
 /// 本示例用来演示如何使用 `happypass` 快速访问工具类
 void main() async {

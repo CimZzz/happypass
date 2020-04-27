@@ -72,10 +72,7 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		 return null;
 	}
 	
-	
-	/// 判断是否允许数据分段发送
-	bool isAllowDataSegment() => true;
-	
+
 	/// 关闭请求
 	@override
 	void close() {

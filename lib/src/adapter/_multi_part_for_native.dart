@@ -1,30 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import '../request_body.dart';
 import 'multi_part.dart' as _multipart;
 
-
-
-final _baseStr = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-/// 生成随机的 Boundary 字符串
-String _randomBoundary() {
-	final random = Random();
-	var str = '';
-	for (var i = 0; i < 15; i++) {
-		var idx = random.nextInt(62);
-		str += _baseStr[idx];
-	}
-	return str;
-}
 
 /// 获取文件名
 String _getFileName(File file) {
 	if (file == null) {
 		return null;
 	}
-	
+
 	String fileName;
 	final idx = file.path.lastIndexOf(Platform.pathSeparator);
 	if (idx != -1) {
@@ -32,61 +17,14 @@ String _getFileName(File file) {
 	} else {
 		fileName = file.path;
 	}
-	
+
 	return fileName;
-}
-
-/// 获取缺省的 `ContentType`
-String _getDefaultContentType(String fileName) {
-	if (fileName == null) {
-		return null;
-	}
-	
-	final postfixIdx = fileName.lastIndexOf('.');
-	if (postfixIdx == -1) {
-		return null;
-	}
-	
-	final postfix = fileName.substring(postfixIdx + 1);
-	
-	switch (postfix) {
-		case 'txt':
-			return 'text/plain';
-		case 'jpeg':
-			return 'image/jpeg';
-		case 'jpg':
-			return 'image/jpeg';
-		case 'png':
-			return 'image/png';
-		case 'json':
-			return 'application/json';
-		case 'md':
-			return 'text/markdown';
-		case 'zip':
-			return 'application/zip';
-		case 'js':
-			return 'text/javascript';
-		case 'mp4':
-			return 'video/mp4';
-		default:
-			return null;
-	}
-}
-
-/// Multipart 子数据
-class _MultiData {
-	_MultiData({this.name, this.data, this.fileName, this.contentType});
-	
-	final String name;
-	final Object data;
-	final String fileName;
-	final String contentType;
 }
 
 class MultipartDataBody implements _multipart.MultipartDataBody {
 	
 	/// Multipart Boundary
-	final String _multipartBoundary = '----DartFormBoundary${_randomBoundary()}';
+	final String _multipartBoundary = '----DartFormBoundary${_multipart.randomBoundary()}';
 	
 	/// 强制覆盖请求中的 `ContentType`
 	@override
@@ -96,10 +34,10 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 	String get contentType => 'multipart/form-data; boundary=$_multipartBoundary';
 	
 	/// Multipart 数据列表
-	List<_MultiData> _multiDataList;
+	List<_multipart.MultiData> _multiDataList;
 	
 	/// 直接添加 Multipart 数据
-	MultipartDataBody addMultiPartData(_MultiData data) {
+	MultipartDataBody addMultiPartData(_multipart.MultiData data) {
 		if (data == null) {
 			return this;
 		}
@@ -110,7 +48,7 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 	}
 	/// 添加文本 Multipart 数据
 	MultipartDataBody addMultipartText(String name, String text, {String fileName, String contentType}) {
-		return addMultiPartData(_MultiData(name: name, data: text, fileName: fileName, contentType: _getDefaultContentType(fileName)));
+		return addMultiPartData(_multipart.MultiData(name: name, data: text, fileName: fileName, contentType: _multipart.getDefaultContentType(fileName)));
 	}
 	
 	/// 添加文件 Multipart 数据
@@ -125,16 +63,18 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 	/// 添加流 Multipart 数据
 	MultipartDataBody addMultipartStream(String name, dynamic stream, {String fileName, String contentType}) {
 		if (stream is Stream<List<int>>) {
-			return addMultiPartData(_MultiData(
+			return addMultiPartData(_multipart.MultiData(
 				name: name,
 				data: stream,
 				fileName: fileName,
-				contentType: contentType ?? _getDefaultContentType(fileName),
+				contentType: contentType ?? _multipart.getDefaultContentType(fileName),
 			));
 		}
 		
 		return this;
 	}
+
+	/// 提供请求 Body 数据
 	@override
 	Stream<dynamic> provideBodyData() async* {
 		final multiDataList = _multiDataList;

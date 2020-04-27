@@ -1,5 +1,4 @@
 import 'package:happypass/happypass.dart';
-import 'package:happypass/src/http_mock_interceptor.dart';
 
 /// 本示例演示如何使用 [MockClientPassInterceptor] 进行离线本地请求模拟
 /// [MockClientPassInterceptor] 可以根据请求 `url` 进行拦截，如果成功拦截可以直接返回一个响应结果作为最终的响应数据

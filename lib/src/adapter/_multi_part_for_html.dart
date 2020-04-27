@@ -1,24 +1,21 @@
-import 'dart:io'
-if (dart.library.html) 'dart:html' as _platform;
+import 'dart:html';
+import 'package:happypass/happypass.dart';
+
 import 'multi_part.dart' as _multipart;
 
-/// Multipart 子数据
-class _MultiData {
-	_MultiData({this.name, this.data, this.fileName, this.contentType});
-	
-	final String name;
-	final Object data;
-	final String fileName;
-	final String contentType;
-}
-
 class MultipartDataBody implements _multipart.MultipartDataBody {
-	
+
+	@override
+	String get contentType => null;
+
+	@override
+	bool get overrideContentType => false;
+
 	/// Multipart 数据列表
-	List<_MultiData> _multiDataList;
+	List<_multipart.MultiData> _multiDataList;
 	
 	/// 直接添加 Multipart 数据
-	MultipartDataBody addMultiPartData(_MultiData data) {
+	MultipartDataBody addMultiPartData(_multipart.MultiData data) {
 		if (data == null) {
 			return this;
 		}
@@ -30,35 +27,54 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 	
 	
 	@override
-  _multipart.MultipartDataBody addMultipartFile(String name, _platform.File file, {String fileName, String contentType}) {
-    // TODO: implement addMultipartFile
-    throw UnimplementedError();
-  }
-
-  @override
-  _multipart.MultipartDataBody addMultipartStream(String name, Stream<List<int>> stream, {String fileName, String contentType}) {
-    // TODO: implement addMultipartStream
-    throw UnimplementedError();
+  _multipart.MultipartDataBody addMultipartFile(String name, File file, {String fileName, String contentType}) {
+		return addMultiPartData(_multipart.MultiData(
+			name: name,
+			data: file,
+			fileName: fileName ?? file.name,
+			contentType: contentType ?? file.type,
+		));
   }
 
   @override
   _multipart.MultipartDataBody addMultipartText(String name, String text, {String fileName, String contentType}) {
-    // TODO: implement addMultipartText
-    throw UnimplementedError();
+	  return addMultiPartData(_multipart.MultiData(name: name, data: text, fileName: fileName, contentType: _multipart.getDefaultContentType(fileName)));
   }
 
-  @override
-  // TODO: implement contentType
-  String get contentType => throw UnimplementedError();
+	@override
+	_multipart.MultipartDataBody addMultipartStream(String name, Stream<List<int>> stream, {String fileName, String contentType}) {
+		return addMultiPartData(_multipart.MultiData(
+			name: name,
+			data: stream,
+			fileName: fileName,
+			contentType: contentType ?? _multipart.getDefaultContentType(fileName),
+		));
+	}
 
   @override
-  // TODO: implement overrideContentType
-  bool get overrideContentType => throw UnimplementedError();
+  Stream<dynamic> provideBodyData() async* {
+	  final multiDataList = _multiDataList;
+	  if (multiDataList == null) {
+		  yield null;
+	  }
 
-  @override
-  Stream provideBodyData() {
-    // TODO: implement provideBodyData
-    throw UnimplementedError();
+	  final formData = FormData();
+	  for(var data in multiDataList) {
+	  	final srcData = data.data;
+	    if(srcData is Blob) {
+		    formData.appendBlob(data.name, srcData, data.fileName);
+	    }
+	  	else if(srcData is Stream<List<int>>) {
+		    final streamData = await srcData.reduce((previous, element) {
+			    previous.addAll(element);
+			    return previous;
+		    });
+		    formData.appendBlob(data.name, Blob(streamData, data.contentType), data.fileName);
+	    }
+	  	else if(srcData is String) {
+		    formData.append(data.name, srcData);
+	    }
+	  }
+	  yield RawBodyData(rawData: formData);
   }
-
 }

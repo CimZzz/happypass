@@ -1,5 +1,4 @@
 import 'package:happypass/happypass.dart';
-import 'package:happypass/src/stream_data.dart';
 
 /// 本示例演示了如何使用 [StreamDataBody] 传递流数据
 void main() async {
