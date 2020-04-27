@@ -1,7 +1,5 @@
 library happypass;
 
-
-
 export 'src/adapter/http_client.dart';
 export 'src/adapter/http_request.dart';
 export 'src/adapter/http_response.dart';
