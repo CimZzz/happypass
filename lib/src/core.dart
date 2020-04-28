@@ -407,7 +407,7 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 			if (key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
 				final realValue = useEncode ? Uri.encodeComponent('value') : value;
 				
-				if (checkFirstParams && _requestOptions.hasUrlParams == true) {
+				if (checkFirstParams && _requestOptions.hasUrlParams != true) {
 					_requestOptions.url += '?';
 				} else {
 					_requestOptions.url += '&';
