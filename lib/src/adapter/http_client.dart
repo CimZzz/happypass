@@ -13,17 +13,19 @@ abstract class PassHttpClient {
 	/// 连接超时时间
 	/// * 只在 Native 端生效
 	set connectionTimeout(Duration timeout);
+	
 	Duration get connectionTimeout;
 	
 	/// 空闲超时时间
 	/// * 只在 Native 端生效
 	set idleTimeout(Duration timeout);
+	
 	Duration get idleTimeout;
-
+	
 	/// 设置 Http 代理
 	/// * 只在 Native 端生效
 	set httpProxy(List<PassHttpProxy> passHttpProxy);
-
+	
 	/// 开启指定方法的 Http 请求
 	Future<PassHttpRequest> fetchHttpRequest(RequestMethod requestMethod, String url, {String otherMethod});
 	

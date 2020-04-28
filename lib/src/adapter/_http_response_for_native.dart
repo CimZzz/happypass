@@ -10,7 +10,7 @@ class PassHttpResponse implements _httpResponse.PassHttpResponse {
 	PassHttpResponse(this._statusCode, this._headers, this._bodyStream) {
 		// 通过头部取得 Content-Length
 		final contentLengthStr = _convertHeaderListToString(_headers['content-length']);
-		if(contentLengthStr != null) {
+		if (contentLengthStr != null) {
 			_contentLength = int.tryParse(contentLengthStr) ?? 0;
 		}
 		else {
@@ -37,10 +37,10 @@ class PassHttpResponse implements _httpResponse.PassHttpResponse {
 	
 	/// 获取 Http 响应头部
 	String getResponseHeader(String key) => _convertHeaderListToString(_headers[key]);
-
-
+	
+	
 	String _convertHeaderListToString(List<String> headerList) {
-		if(headerList == null) {
+		if (headerList == null) {
 			return null;
 		}
 		

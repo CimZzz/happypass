@@ -24,9 +24,9 @@ class HttpProcessor implements _processor.HttpProcessor {
 				// 如果请求已经取消，则直接返回 null
 				return null;
 			}
-
+			
 			// 未配置 HttpClient，需要生成一个临时的 HttpClient
-			if(isTempHttpClient) {
+			if (isTempHttpClient) {
 				httpClient = PassHttpClient();
 				// 设置宽松的超时时间，目的是为了由我们接管超时处理逻辑
 				chainRequestModifier.fillLooseTimeout(httpClient);
@@ -36,7 +36,7 @@ class HttpProcessor implements _processor.HttpProcessor {
 				// 只有临时 HttpClient 才会被中断器强制关闭；预置的不会被强制中断
 				chainRequestModifier.assembleHttpClient(httpClient);
 			}
-
+			
 			final url = chainRequestModifier.getUrl();
 			final method = chainRequestModifier.getRequestMethod();
 			
@@ -51,7 +51,7 @@ class HttpProcessor implements _processor.HttpProcessor {
 			
 			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq, useProxy: false);
 			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq, useProxy: false);
-
+			
 			// 等待填充头部和填充请求 Body 完成
 			await fillHeaderFuture;
 			await fillBodyFuture;
@@ -74,7 +74,7 @@ class HttpProcessor implements _processor.HttpProcessor {
 			return ErrorPassResponse(msg: '请求发生异常: $e', error: e, stacktrace: stackTrace);
 		} finally {
 			httpReq?.close();
-			if(isTempHttpClient) {
+			if (isTempHttpClient) {
 				if (httpClient != null) {
 					httpClient.close();
 					httpClient = null;

@@ -1,10 +1,10 @@
 import 'http_response.dart';
 
 abstract class PassHttpRequest {
-
+	
 	/// 判断请求是否已经执行完毕
 	bool get isClosed;
-
+	
 	/// 设置 Http 请求头部
 	void setRequestHeader(String key, String value);
 	

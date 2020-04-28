@@ -9,11 +9,11 @@ class Request extends RequestBuilder<Request> with RequestOptionMixin<Request>, 
 	
 	Request();
 	
-	Request._forkByOther(RequestBuilder request): super.forkByOther(request);
+	Request._forkByOther(RequestBuilder request) : super.forkByOther(request);
 	
 	/// 请求完成 Future
 	Completer<ResultPassResponse> RequestCompleter;
-
+	
 	/// 执行请求
 	/// 只有在 [RequestStatus.Prepare] 状态下才会实际发出请求
 	/// 其余条件下均返回第一次执行时的 Future
@@ -26,7 +26,7 @@ class Request extends RequestBuilder<Request> with RequestOptionMixin<Request>, 
 		RequestCompleter.complete(_execute());
 		return RequestCompleter.future;
 	}
-
+	
 	/// 实际执行请求逻辑
 	/// 借助 [PassInterceptorChain] 完成请求
 	/// 缺省情况下，由 [BusinessPassInterceptor] 拦截器完成请求处理逻辑
@@ -46,7 +46,7 @@ class Request extends RequestBuilder<Request> with RequestOptionMixin<Request>, 
 /// [RequestPrototype.spawn] 方法可以快速生成配置好的请求参数
 /// [RequestPrototype.clone] 方法可以复制一个相同配置的新的请求原型对象
 class RequestPrototype extends RequestBuilder<RequestPrototype> with RequestOptionMixin<RequestPrototype> {
-		
+	
 	RequestPrototype();
 	
 	RequestPrototype._fork(RequestPrototype requestPrototype) : super.forkByOther(requestPrototype);

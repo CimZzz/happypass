@@ -2,7 +2,7 @@
 /// 将 url 解析成一系列组成部分
 class PassResolveUrl {
 	PassResolveUrl({this.url, this.protocol, this.host, this.domain, this.port, this.path, this.queryParams});
-
+	
 	final String url;
 	final String protocol;
 	final String domain;
@@ -10,7 +10,7 @@ class PassResolveUrl {
 	final int port;
 	final String path;
 	final String queryParams;
-
+	
 	@override
 	String toString() {
 		return 'url: $url, domain: $domain, host: $host, port: $port, path: $path, queryParams: $queryParams';
@@ -23,7 +23,7 @@ final Object _stopResolveObj = Object();
 /// 用来返回解析完成的 Url 组成部分
 class _ResolveResult {
 	const _ResolveResult(this.result, this.doBackward);
-
+	
 	final String result;
 	final bool doBackward;
 }
@@ -37,7 +37,7 @@ dynamic _resolveProtocol(String concat, String c, bool isLastChar) {
 	if (isLastChar) {
 		return _stopResolveObj;
 	}
-
+	
 	if (c == ':') {
 		switch (concat) {
 		// 识别出为 http 请求
@@ -65,11 +65,11 @@ dynamic _resolveProtocolConcat(String concat, String c, bool isLastChar) {
 	if (isLastChar) {
 		return _stopResolveObj;
 	}
-
+	
 	if (c != ':' && c != '/') {
 		return _stopResolveObj;
 	}
-
+	
 	final newConcat = concat + c;
 	if (newConcat.length == 3) {
 		if (newConcat == '://') {
@@ -78,7 +78,7 @@ dynamic _resolveProtocolConcat(String concat, String c, bool isLastChar) {
 			return _stopResolveObj;
 		}
 	}
-
+	
 	return newConcat;
 }
 
@@ -106,7 +106,7 @@ dynamic _resolvePort(String concat, String c, bool isLastChar) {
 			return c;
 		}
 	}
-
+	
 	if (c == '?' || c == '/' || isLastChar) {
 		if (RegExp('^:[0-9]+\$').hasMatch(concat)) {
 			return _ResolveResult(concat.substring(1), !isLastChar);
@@ -114,12 +114,12 @@ dynamic _resolvePort(String concat, String c, bool isLastChar) {
 			return _stopResolveObj;
 		}
 	}
-
+	
 	if (concat.length == 6) {
 		// 超过长度限制
 		return _stopResolveObj;
 	}
-
+	
 	return concat + c;
 }
 
@@ -136,14 +136,14 @@ dynamic _resolvePath(String concat, String c, bool isLastChar) {
 			return c;
 		}
 	}
-
+	
 	if (c == '?') {
 		if (concat.length == 1) {
 			return _stopResolveObj;
 		}
 		return _ResolveResult(concat, true);
 	}
-
+	
 	if (isLastChar) {
 		return _ResolveResult(concat + c, true);
 	}
@@ -154,9 +154,9 @@ dynamic _resolvePath(String concat, String c, bool isLastChar) {
 /// 提供一系列便捷的方法来操作与 Http 相关的数据
 class PassHttpUtils {
 	PassHttpUtils._();
-
+	
 	static final List<_ResolveCallback> _resolveCallbackList = [_resolveProtocol, _resolveProtocolConcat, _resolveHost, _resolvePort, _resolvePath];
-
+	
 	/// 根据 Url 获取其组成信息
 	/// 返回 HttpUrl 来承载这些信息
 	static PassResolveUrl resolveUrl(String url) {
@@ -164,7 +164,7 @@ class PassHttpUtils {
 			if (url == null) {
 				return null;
 			}
-
+			
 			final urlLength = url.length;
 			var callbackIdx = 0;
 			var concatStr = '';
@@ -200,11 +200,11 @@ class PassHttpUtils {
 					return null;
 				}
 			}
-
+			
 			if (resultList.length != 6) {
 				return null;
 			}
-
+			
 			final hostStr = resultList[2];
 			var domainStr = hostStr;
 			final domainEndPoint = domainStr.lastIndexOf('.');
@@ -215,7 +215,7 @@ class PassHttpUtils {
 			if (domainStartPoint != -1) {
 				domainStr = domainStr.substring(domainStartPoint + 1);
 			}
-
+			
 			final portStr = resultList[3];
 			return PassResolveUrl(url: url,
 				protocol: resultList[0],

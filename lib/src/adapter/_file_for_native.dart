@@ -3,7 +3,7 @@ import 'file.dart' as _file;
 
 class FileWrapper implements _file.FileWrapper {
 	
-	FileWrapper(String filePath): file = File(filePath);
+	FileWrapper(String filePath) : file = File(filePath);
 	
 	FileWrapper.createByFile(this.file);
 	
@@ -22,9 +22,9 @@ class FileWrapper implements _file.FileWrapper {
 		IOSink ioSink;
 		File tempFile = file;
 		try {
-			if(! await tempFile.exists()) {
+			if (!await tempFile.exists()) {
 				tempFile = await tempFile.create(recursive: true);
-				if(tempFile == null) {
+				if (tempFile == null) {
 					return false;
 				}
 			}
@@ -33,12 +33,12 @@ class FileWrapper implements _file.FileWrapper {
 			ioSink.flush();
 			return true;
 		}
-		catch(e) {
+		catch (e) {
 			_errMsg = e.toString();
 			return false;
 		}
 		finally {
-			if(ioSink != null) {
+			if (ioSink != null) {
 				await ioSink.close();
 			}
 		}

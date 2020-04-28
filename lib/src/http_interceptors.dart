@@ -6,14 +6,14 @@ import 'http_responses.dart';
 /// 用来接收并处理 Request
 abstract class PassInterceptor {
 	const PassInterceptor();
-
+	
 	FutureOr<PassResponse> intercept(PassInterceptorChain chain);
 }
 
 /// 打印请求 Url 拦截器
 class LogUrlInterceptor extends PassInterceptor {
 	const LogUrlInterceptor();
-
+	
 	@override
 	FutureOr<PassResponse> intercept(PassInterceptorChain chain) {
 		print('current request url : ' + chain.modifier.getUrl());
@@ -29,9 +29,9 @@ typedef SimplePassInterceptorCallback = Future<PassResponse> Function(PassInterc
 /// 需要注意的是，闭包必须是 `static` 的
 class SimplePassInterceptor extends PassInterceptor {
 	SimplePassInterceptor(this._callback);
-
+	
 	final SimplePassInterceptorCallback _callback;
-
+	
 	@override
 	FutureOr<PassResponse> intercept(PassInterceptorChain chain) => _callback(chain);
 }
@@ -40,7 +40,7 @@ class SimplePassInterceptor extends PassInterceptor {
 /// 默认实际处理 Request 和生成 Response 的拦截器
 class BusinessPassInterceptor extends PassInterceptor {
 	const BusinessPassInterceptor();
-
+	
 	@override
 	FutureOr<PassResponse> intercept(PassInterceptorChain chain) async {
 		return await chain.requestForPassResponse();

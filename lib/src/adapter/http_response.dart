@@ -6,7 +6,7 @@ abstract class PassHttpResponse {
 	
 	/// 响应数据长度
 	int get contentLength;
-
+	
 	/// 响应数据流
 	Stream<List<int>> get bodyStream;
 	

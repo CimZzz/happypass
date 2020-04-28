@@ -8,22 +8,22 @@ import 'request_body.dart';
 class FormDataBody extends RequestBody {
 	/// 缺省的构造方法
 	FormDataBody();
-
+	
 	/// 以键值对 Map 的形式创建 FormDataBody
 	FormDataBody.createByMap(Map<String, String> map) {
 		addMap(map);
 	}
-
+	
 	/// 强制覆盖请求中的 `ContentType`
 	@override
 	bool get overrideContentType => true;
-
+	
 	@override
 	String get contentType => 'application/x-www-form-urlencoded';
-
+	
 	/// 请求数据映射表
 	Map<String, String> _bodyMap;
-
+	
 	/// 向 FormDataBody 中添加键值对数据
 	/// `Key` 与 `Value` 不能为空，并会将 `Value` 转化为字符串
 	/// * `Key` 与 `Value` 都会被 `Uri` 加密处理
@@ -31,13 +31,13 @@ class FormDataBody extends RequestBody {
 		if (key == null || value == null) {
 			return this;
 		}
-
+		
 		_bodyMap ??= {};
 		_bodyMap[Uri.encodeComponent(key)] = Uri.encodeComponent(value.toString());
-
+		
 		return this;
 	}
-
+	
 	/// 向 FormDataBody 中添加键值对 Map
 	/// 以键值对 Map 的类型添加数据
 	FormDataBody addMap(Map<String, String> map) {
@@ -46,7 +46,7 @@ class FormDataBody extends RequestBody {
 		}
 		return this;
 	}
-
+	
 	/// 转化为 FormDataBody 数据
 	@override
 	Stream<dynamic> provideBodyData() async* {
@@ -55,7 +55,7 @@ class FormDataBody extends RequestBody {
 			yield null;
 		}
 		_bodyMap = null;
-
+		
 		var bodyStr = '';
 		var isFirst = true;
 		bodyMap.forEach((String key, String value) {

@@ -12,7 +12,7 @@ HappyPassQuickAccess happypass = HappyPassQuickAccess._();
 /// - POST 请求
 class HappyPassQuickAccess {
 	HappyPassQuickAccess._();
-
+	
 	/// 快速进行一次 GET 请求
 	/// - [url] : 请求的地址
 	/// - [path] : 请求的部分路径
@@ -39,7 +39,7 @@ class HappyPassQuickAccess {
 		}
 		return request.doRequest();
 	}
-
+	
 	/// 快速进行一次 POST 请求
 	/// - [url] : 请求的地址
 	/// - [path] : 请求的部分路径
@@ -56,7 +56,7 @@ class HappyPassQuickAccess {
 		RequestConfigCallback configCallback,
 	}) {
 		assert(url != null || path != null || prototype != null);
-		if(body == null) {
+		if (body == null) {
 			return null;
 		}
 		final request = prototype?.spawn() ?? Request();
@@ -72,7 +72,7 @@ class HappyPassQuickAccess {
 		}
 		return request.doRequest();
 	}
-
+	
 	/// 快速下载并保存到指定文件
 	/// - [downloadUrl] : 指定下载的 Url
 	/// - [storePath] : 保存文件的路径
@@ -90,7 +90,7 @@ class HappyPassQuickAccess {
 		
 		final errMsg = fileWrapper.checkErrMsg();
 		
-		if(errMsg != null) {
+		if (errMsg != null) {
 			return ErrorPassResponse(msg: errMsg);
 		}
 		
@@ -98,9 +98,9 @@ class HappyPassQuickAccess {
 		if (downloadUrl != null) {
 			request.setUrl(downloadUrl);
 		}
-
+		
 		request.setResponseRawDataReceiverCallback((Stream<List<int>> rawData) async {
-			if(await fileWrapper.saveFileData(rawData)) {
+			if (await fileWrapper.saveFileData(rawData)) {
 				return SuccessPassResponse(body: "download successed!");
 			}
 			else {
@@ -110,7 +110,7 @@ class HappyPassQuickAccess {
 		if (configCallback != null) {
 			configCallback(request);
 		}
-
+		
 		return await request.doRequest();
 	}
 }

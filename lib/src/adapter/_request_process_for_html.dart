@@ -9,7 +9,7 @@ import 'request_process.dart' as _processor;
 final HttpProcessor processor = HttpProcessor();
 
 class HttpProcessor implements _processor.HttpProcessor {
-
+	
 	/// Html 中 HttpClient 无实际意义，只是用来创建请求
 	/// 只有 PassHttpRequest 作为实际意义上的请求对象
 	@override
@@ -23,23 +23,23 @@ class HttpProcessor implements _processor.HttpProcessor {
 			}
 			final url = chainRequestModifier.getUrl();
 			final method = chainRequestModifier.getRequestMethod();
-
+			
 			httpReq = await PassHttpClient().fetchHttpRequest(method, url);
 			// 装配 `PassHttpRequest`，保证中断器可以正常中断请求
 			chainRequestModifier.assembleHttpRequest(httpReq);
-
+			
 			if (chainRequestModifier.isClosed) {
 				// 如果请求已经取消，则直接返回 null
 				return null;
 			}
-
+			
 			final fillHeaderFuture = chainRequestModifier.fillRequestHeader(httpReq);
 			final fillBodyFuture = chainRequestModifier.fillRequestBody(httpReq);
-
+			
 			// 等待填充头部和填充请求 Body 完成
 			await fillHeaderFuture;
 			await fillBodyFuture;
-
+			
 			PassResponse response;
 			if (chainRequestModifier.existResponseRawDataReceiverCallback()) {
 				// 如果存在响应数据原始接收回调
@@ -52,7 +52,7 @@ class HttpProcessor implements _processor.HttpProcessor {
 				response = await chainRequestModifier.runInReadTimeout(chainRequestModifier.analyzeResponse(httpReq));
 			}
 			httpReq = null;
-
+			
 			return response ?? ErrorPassResponse(msg: '未能成功解析 Response');
 		} catch (e, stackTrace) {
 //			print(stackTrace);

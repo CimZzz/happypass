@@ -5,23 +5,23 @@ import 'adapter/http_response.dart';
 mixin ResponseMixinBase {
 	/// 原始响应数据
 	PassHttpResponse _rawResponse;
-
+	
 	/// 装配原始响应对象
 	void assembleResponse(PassHttpResponse response) {
 		this._rawResponse = response;
 	}
-
+	
 	/// 传递原始响应数据
 	void passResponse(ResponseMixinBase mixinBase) {
 		mixinBase.assembleResponse(_rawResponse);
 	}
-
+	
 	/// 获取状态码
 	int get statusCode => _rawResponse?.statusCode;
-
+	
 	/// 获取内容长度
 	int get contentLength => _rawResponse?.contentLength;
-
+	
 	/// 获取响应头部
 	String getResponseHeaders(String key) {
 		return _rawResponse?.getResponseHeader(key);
@@ -36,7 +36,7 @@ abstract class PassResponse {
 /// 结果响应体
 abstract class ResultPassResponse extends PassResponse {
 	const ResultPassResponse(this.isSuccess);
-
+	
 	final bool isSuccess;
 }
 
@@ -46,7 +46,7 @@ class ErrorPassResponse extends ResultPassResponse {
 	final String msg;
 	final dynamic error;
 	final StackTrace stacktrace;
-
+	
 	@override
 	String toString() => msg ?? 'null';
 }

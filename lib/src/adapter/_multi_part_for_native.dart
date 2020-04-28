@@ -9,7 +9,7 @@ String _getFileName(File file) {
 	if (file == null) {
 		return null;
 	}
-
+	
 	String fileName;
 	final idx = file.path.lastIndexOf(Platform.pathSeparator);
 	if (idx != -1) {
@@ -17,7 +17,7 @@ String _getFileName(File file) {
 	} else {
 		fileName = file.path;
 	}
-
+	
 	return fileName;
 }
 
@@ -46,9 +46,11 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 		_multiDataList.add(data);
 		return this;
 	}
+	
 	/// 添加文本 Multipart 数据
 	MultipartDataBody addMultipartText(String name, String text, {String fileName, String contentType}) {
-		return addMultiPartData(_multipart.MultiData(name: name, data: text, fileName: fileName, contentType: _multipart.getDefaultContentType(fileName)));
+		return addMultiPartData(
+			_multipart.MultiData(name: name, data: text, fileName: fileName, contentType: _multipart.getDefaultContentType(fileName)));
 	}
 	
 	/// 添加文件 Multipart 数据
@@ -73,7 +75,7 @@ class MultipartDataBody implements _multipart.MultipartDataBody {
 		
 		return this;
 	}
-
+	
 	/// 提供请求 Body 数据
 	@override
 	Stream<dynamic> provideBodyData() async* {

@@ -67,86 +67,86 @@ class RequestOptions {
 	
 	/// 表示当前请求状态
 	RequestStatus status = RequestStatus.Prepare;
-
+	
 	/// 检查当前状态是否处于准备状态
 	/// 在这个状态下可以修改全部配置
 	bool get checkPrepareStatus => status.index == RequestStatus.Prepare.index;
-
+	
 	/// 检查当前状态是否处于执行中状态
 	/// 这里的执行中并不是真正执行，该状态表示 Request 已经交由拦截链处理，并未真正生成 Response
 	/// 在这个状态下可以修改大部分配置
 	bool get checkExecutingStatus => status.index <= RequestStatus.Executing.index;
-
+	
 	/// 请求 id
 	/// 通常情况下为 null，但是为了满足特定需求需要知晓某个请求的信息，可以为请求设置 id 来进行区分
 	dynamic reqId;
-
+	
 	/// 执行代理接口回调
 	/// 请求中部分操作比较耗时，可以设置该代理来实现真实异步执行（比如借助 Isolate）
 	AsyncRunProxy runProxy;
-
+	
 	/// 存放请求拦截器
 	List<PassInterceptor> passInterceptorList = [const BusinessPassInterceptor()];
-
+	
 	/// 存放请求头 Map
 	Map<String, String> headerMap;
-
+	
 	/// 判断是否已经存在 Url 参数
 	/// 这个标志取决于拼接 Url 地址时是否追加 `?`
 	bool hasUrlParams;
-
+	
 	/// 存放请求地址 Url
 	String url;
-
+	
 	/// 判断 Url 是否发生变化，需要重新解析 [resolveUrl]
 	/// 与 [resolveUrl] 组合使用
 	bool needResolved;
-
+	
 	/// 存放解析过的 Url
 	/// 每次 url 发生变化时，该值会重置为 null，下次使用时重新生成
 	/// * 解析过程需要一些计算操作，这样的做的目的是为了缓存当前 url 对应的解析结果，优化了效率
 	PassResolveUrl resolveUrl;
-
+	
 	/// 存放请求方法
 	RequestMethod requestMethod = RequestMethod.GET;
-
+	
 	/// 存放自定义请求方法
 	String customRequestMethod;
-
+	
 	/// 存放请求方法所需数据体
 	dynamic body;
-
+	
 	/// 数据编码器
 	List<HttpMessageEncoder> encoderList;
-
+	
 	/// 数据解码器
 	List<HttpMessageDecoder> decoderList;
-
+	
 	/// 进度更新回调
 	List<HttpResponseDataUpdateCallback> responseDataUpdateList;
-
+	
 	/// 接收原始数据回调
 	HttpResponseRawDataReceiverCallback responseReceiverCallback;
-
+	
 	/// 请求中断器
 	Set<RequestCloser> requestCloserSet;
-
+	
 	/// 请求 Http 代理
 	List<PassHttpProxy> httpProxyList;
-
+	
 	/// 请求总超时时间
 	/// 包括拦截器处理耗时也会计算到其中
 	Duration totalTimeout;
-
+	
 	/// 请求连接超时时间
 	Duration connectTimeout;
-
+	
 	/// 请求读取超时时间
 	Duration readTimeout;
-
+	
 	/// HttpClient
 	PassHttpClient passHttpClient;
-
+	
 	
 	/*Copy flag*/
 	
@@ -190,6 +190,8 @@ class RequestOptions {
 			cloneObj.headerMap = Map.from(headerMap);
 		}
 		cloneObj.url = url;
+		cloneObj.hasUrlParams = hasUrlParams;
+		cloneObj.needResolved = needResolved;
 		cloneObj.requestMethod = requestMethod;
 		cloneObj.body = body;
 		if (encoderList != null) {
@@ -198,15 +200,16 @@ class RequestOptions {
 		if (decoderList != null) {
 			cloneObj.decoderList = List.from(decoderList);
 		}
-
+		
 		if (httpProxyList != null) {
 			cloneObj.httpProxyList = List.from(httpProxyList);
 		}
 
+		
 		cloneObj.totalTimeout = totalTimeout;
 		cloneObj.connectTimeout = connectTimeout;
 		cloneObj.readTimeout = readTimeout;
-
+		
 		cloneObj.passHttpClient = passHttpClient;
 		
 		cloneObj.needCopyInterceptor = true;
@@ -223,13 +226,13 @@ class RequestOptions {
 abstract class RequestBuilder<ReturnType> {
 	
 	/// 直接构造，使用默认配置项
-	RequestBuilder(): _requestOptions = RequestOptions();
+	RequestBuilder() : _requestOptions = RequestOptions();
 	
 	/// 复制子配置项
-	RequestBuilder.copyByOther(RequestBuilder operator): _requestOptions = operator._requestOptions;
+	RequestBuilder.copyByOther(RequestBuilder operator) : _requestOptions = operator._requestOptions;
 	
 	/// Fork 子配置项
-	RequestBuilder.forkByOther(RequestBuilder operator): _requestOptions = operator._requestOptions.clone();
+	RequestBuilder.forkByOther(RequestBuilder operator) : _requestOptions = operator._requestOptions.clone();
 	
 	/// 请求配置
 	final RequestOptions _requestOptions;
@@ -278,8 +281,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 拦截器列表
 	List<PassInterceptor> get _passInterceptors {
-		if(_requestOptions.needCopyInterceptor) {
-			if(_requestOptions.passInterceptorList != null) {
+		if (_requestOptions.needCopyInterceptor) {
+			if (_requestOptions.passInterceptorList != null) {
 				_requestOptions.passInterceptorList = List.from(_requestOptions.passInterceptorList);
 			}
 			_requestOptions.needCopyInterceptor = false;
@@ -315,8 +318,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 头部表
 	Map<String, String> get _header {
-		if(_requestOptions.needCopyHeaderMap) {
-			if(_requestOptions.headerMap != null) {
+		if (_requestOptions.needCopyHeaderMap) {
+			if (_requestOptions.headerMap != null) {
 				_requestOptions.headerMap = Map.from(_requestOptions.headerMap);
 			}
 			_requestOptions.needCopyHeaderMap = false;
@@ -449,8 +452,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 编码器列表
 	List<HttpMessageEncoder> get _encoders {
-		if(_requestOptions.needCopyEncoderList) {
-			if(_requestOptions.encoderList != null) {
+		if (_requestOptions.needCopyEncoderList) {
+			if (_requestOptions.encoderList != null) {
 				_requestOptions.encoderList = List.from(_requestOptions.encoderList);
 			}
 			_requestOptions.needCopyEncoderList = false;
@@ -502,8 +505,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 解码器列表
 	List<HttpMessageDecoder> get _decoders {
-		if(_requestOptions.needCopyDecoderList) {
-			if(_requestOptions.decoderList != null) {
+		if (_requestOptions.needCopyDecoderList) {
+			if (_requestOptions.decoderList != null) {
 				_requestOptions.decoderList = List.from(_requestOptions.decoderList);
 			}
 			_requestOptions.needCopyDecoderList = false;
@@ -579,8 +582,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 响应数据更新回调列表
 	List<HttpResponseDataUpdateCallback> get _responseDataUpdates {
-		if(_requestOptions.needCopyResponseDataUpdateList) {
-			if(_requestOptions.responseDataUpdateList != null) {
+		if (_requestOptions.needCopyResponseDataUpdateList) {
+			if (_requestOptions.responseDataUpdateList != null) {
 				_requestOptions.responseDataUpdateList = List.from(_requestOptions.responseDataUpdateList);
 			}
 			_requestOptions.needCopyResponseDataUpdateList = false;
@@ -610,8 +613,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 请求中断器列表
 	Set<RequestCloser> get _requestClosers {
-		if(_requestOptions.needCopyRequestCloserList) {
-			if(_requestOptions.requestCloserSet != null) {
+		if (_requestOptions.needCopyRequestCloserList) {
+			if (_requestOptions.requestCloserSet != null) {
 				_requestOptions.requestCloserSet = Set.from(_requestOptions.requestCloserSet);
 			}
 			_requestOptions.needCopyRequestCloserList = false;
@@ -629,8 +632,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 请求代理列表
 	List<PassHttpProxy> get _httpProxies {
-		if(_requestOptions.needCopyHttpProxyList) {
-			if(_requestOptions.httpProxyList != null) {
+		if (_requestOptions.needCopyHttpProxyList) {
+			if (_requestOptions.httpProxyList != null) {
 				_requestOptions.httpProxyList = List.from(_requestOptions.httpProxyList);
 			}
 			_requestOptions.needCopyHttpProxyList = false;
@@ -694,7 +697,7 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	
 	/// 获取全部请求 Http 代理
 	List<PassHttpProxy> getPassHttpProxies() {
-		if(_requestOptions.httpProxyList != null) {
+		if (_requestOptions.httpProxyList != null) {
 			return List.from(_requestOptions.httpProxyList);
 		}
 		else {
@@ -928,7 +931,7 @@ mixin RequestOperatorMixin<ReturnType> on RequestOptionMixin<ReturnType> {
 				if (!httpReq.checkDataLegal(message)) {
 					throw HappyPassError('请求 \'body\' 数据类型非法: ${message.runtimeType}');
 				}
-
+				
 				httpReq.sendData(message);
 			}
 		} else {
@@ -1067,10 +1070,10 @@ mixin RequestOperatorMixin<ReturnType> on RequestOptionMixin<ReturnType> {
 		final result = await transferRawDataForRawDataReceiver(rawByteDataStream);
 		
 		if (result is PassResponse) {
-			if(result is ProcessablePassResponse) {
+			if (result is ProcessablePassResponse) {
 				result.assembleResponse(httpResp);
 			}
-			else if(result is SuccessPassResponse) {
+			else if (result is SuccessPassResponse) {
 				result.assembleResponse(httpResp);
 			}
 			passResponse = result;

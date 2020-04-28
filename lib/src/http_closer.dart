@@ -10,7 +10,7 @@ const _defaultErrorResponse = const ErrorPassResponse(msg: 'request interrupted!
 /// 请求中断器
 /// 用于外部中断请求
 class RequestCloser {
-	RequestCloser({RequestCloserResponseChooseCallback responseChooseCallback}):
+	RequestCloser({RequestCloserResponseChooseCallback responseChooseCallback}) :
 			_responseChooseCallback = responseChooseCallback;
 	
 	/// 请求中断响应结果选择回调
@@ -20,6 +20,7 @@ class RequestCloser {
 	
 	/// 判断是否已经中断了请求
 	bool _isClosed = false;
+	
 	bool get isClosed => _isClosed;
 	
 	/// 强制中断返回的响应结果
@@ -31,7 +32,7 @@ class RequestCloser {
 	/// 注册请求中断代理执行域
 	/// 若此时已经中断，那么会立即中断执行域
 	void _registerRequestCloseScope(RequestCloseScope scope) {
-		if(isClosed) {
+		if (isClosed) {
 			scope._interruptScope(_responseChooseCallback, _finishResponse);
 			return;
 		}
@@ -42,14 +43,14 @@ class RequestCloser {
 	
 	/// 注销请求中断代理执行域
 	void _unregisterRequestCloseScope(RequestCloseScope scope) {
-		if(_scopeSet != null) {
+		if (_scopeSet != null) {
 			_scopeSet.remove(scope);
 		}
 	}
 	
 	/// 强制执行中断操作逻辑
 	void _close() {
-		if(_scopeSet != null) {
+		if (_scopeSet != null) {
 			final tempSet = _scopeSet;
 			_scopeSet = null;
 			tempSet.forEach((scope) {
@@ -60,7 +61,7 @@ class RequestCloser {
 	
 	/// 强制中断请求
 	void close({PassResponse finishResponse = _defaultErrorResponse}) {
-		if(isClosed) {
+		if (isClosed) {
 			return;
 		}
 		
@@ -85,9 +86,11 @@ class RequestCloseScope {
 	ChainRequestModifier _modifier;
 	
 	ResultPassResponse _finishResponse;
+	
 	ResultPassResponse get finishResponse => _finishResponse;
 	
 	bool _isClosed = false;
+	
 	bool get isClosed => _isClosed;
 	
 	void assembleModifier(ChainRequestModifier modifier) {
@@ -95,9 +98,9 @@ class RequestCloseScope {
 	}
 	
 	void registerRequestCloser(Iterable<RequestCloser> closers) {
-		if(closers != null) {
-			for(final closer in closers) {
-				if(_isClosed) {
+		if (closers != null) {
+			for (final closer in closers) {
+				if (_isClosed) {
 					return;
 				}
 				closer._registerRequestCloseScope(this);
@@ -106,8 +109,8 @@ class RequestCloseScope {
 	}
 	
 	void unregisterRequestCloser(Iterable<RequestCloser> closers) {
-		if(closers != null) {
-			for(final closer in closers) {
+		if (closers != null) {
+			for (final closer in closers) {
 				closer._unregisterRequestCloseScope(this);
 			}
 		}
@@ -126,7 +129,7 @@ class RequestCloseScope {
 	/// C - 表示最后返回的处理结果
 	/// A 或 B 首先触发的一方任意结果都会成为 C 的最终结果
 	FutureOr<PassResponse> startScopeRun(Future<PassResponse> realFuture, RequestCloseCallback callback) {
-		if(_isClosed) {
+		if (_isClosed) {
 			callback();
 			return _finishResponse;
 		}
@@ -135,13 +138,13 @@ class RequestCloseScope {
 		_realBusinessCompleter = Completer();
 		_innerCompleter = Completer();
 		_innerSubscription = _realBusinessCompleter.future.asStream().listen((data) {
-			if(!_isClosed) {
+			if (!_isClosed) {
 				_isClosed = true;
 				_innerCompleter.complete(data);
 				_callback();
 			}
 		}, onError: (e, stackTrace) {
-			if(!_isClosed) {
+			if (!_isClosed) {
 				_isClosed = true;
 				_innerCompleter.complete(ErrorPassResponse(
 					msg: e.toString(), error: e, stacktrace: stackTrace));
@@ -154,15 +157,15 @@ class RequestCloseScope {
 	
 	/// 中断 Scope
 	void _interruptScope(RequestCloserResponseChooseCallback callback, ResultPassResponse defaultResponse) {
-		if(!_isClosed) {
+		if (!_isClosed) {
 			try {
 				_finishResponse = callback(_modifier) ?? defaultResponse;
 			}
-			catch(e) {
+			catch (e) {
 				_finishResponse = defaultResponse;
 			}
 			_isClosed = true;
-			if(!_isStarted) {
+			if (!_isStarted) {
 				return;
 			}
 			// 主动中断时取消 Stream 订阅

@@ -8,7 +8,7 @@ class PassHttpResponse implements _httpResponse.PassHttpResponse {
 	PassHttpResponse(this._statusCode, this._headers, this._bodyStream) {
 		// 通过头部取得 Content-Length
 		final contentLengthStr = _headers['content-length'];
-		if(contentLengthStr != null) {
+		if (contentLengthStr != null) {
 			_contentLength = int.tryParse(contentLengthStr) ?? 0;
 		}
 		else {

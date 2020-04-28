@@ -4,9 +4,9 @@ import '../http_errors.dart';
 import '../core.dart';
 
 import '_http_request_for_native.dart';
-import 'http_client.dart' as _httpClient;
+import 'http_client.dart' as httpClient;
 
-class PassHttpClient implements _httpClient.PassHttpClient {
+class PassHttpClient implements httpClient.PassHttpClient {
 	
 	PassHttpClient() : _httpClient = HttpClient();
 	
@@ -34,7 +34,7 @@ class PassHttpClient implements _httpClient.PassHttpClient {
 	/// 设置 Http 代理
 	@override
 	set httpProxy(List<PassHttpProxy> passHttpProxy) {
-		if(passHttpProxy == null || passHttpProxy.length == 0) {
+		if(passHttpProxy == null || passHttpProxy.isEmpty) {
 			_httpClient.findProxy = null;
 		}
 		else {

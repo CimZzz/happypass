@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'core.dart';
-import 'request_builder.dart';
 import 'http_responses.dart';
 import 'http_interceptor_chain.dart';
 import 'http_interceptors.dart';
@@ -74,7 +73,7 @@ class MockClientBuilder {
 		if (path != null) {
 			map.addAll(path);
 		}
-		if(map.length == 0) {
+		if(map.isEmpty) {
 			return null;
 		}
 		

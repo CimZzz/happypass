@@ -129,3 +129,5 @@
 
 ## 2.0.2
 - 修复 addQueryParams 值错误问题
+- 修复 clone 导致 UrlParams 重置问题
+- format code

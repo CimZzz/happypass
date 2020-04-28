@@ -61,14 +61,14 @@ String getDefaultContentType(String fileName) {
 	if (fileName == null) {
 		return null;
 	}
-
+	
 	final postfixIdx = fileName.lastIndexOf('.');
 	if (postfixIdx == -1) {
 		return null;
 	}
-
+	
 	final postfix = fileName.substring(postfixIdx + 1);
-
+	
 	switch (postfix) {
 		case 'txt':
 			return 'text/plain';
@@ -97,7 +97,7 @@ String getDefaultContentType(String fileName) {
 /// Multipart 子数据
 class MultiData {
 	MultiData({this.name, this.data, this.fileName, this.contentType});
-
+	
 	final String name;
 	final Object data;
 	final String fileName;

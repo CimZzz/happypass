@@ -52,7 +52,7 @@ class PassInterceptorChain {
 		
 		final response = await _closeScope.startScopeRun(
 			_chainRequestModifier.runInTotalTimeout(_waitResponse(0)),
-			() => _chainRequestModifier._markClosed()
+				() => _chainRequestModifier._markClosed()
 		);
 		// 请求结束后注销
 		_closeScope.unregisterRequestCloser(requestOptions.requestCloserSet);
@@ -107,15 +107,17 @@ class PassInterceptorChain {
 
 /// 拦截链请求修改器
 /// 可以在拦截过程中对请求进行一些修改
-class ChainRequestModifier extends RequestBuilder<ChainRequestModifier> with
-	RequestOptionMixin<ChainRequestModifier>,
-	RequestBodyMixin<ChainRequestModifier>,
-	RequestOperatorMixin<ChainRequestModifier> {
-	ChainRequestModifier._(Request request): super.copyByOther(request);
+class ChainRequestModifier extends RequestBuilder<ChainRequestModifier>
+	with
+		RequestOptionMixin<ChainRequestModifier>,
+		RequestBodyMixin<ChainRequestModifier>,
+		RequestOperatorMixin<ChainRequestModifier> {
+	ChainRequestModifier._(Request request) : super.copyByOther(request);
 	
 	PassHttpClient _client;
 	PassHttpRequest _httpRequest;
 	bool _isClosed = false;
+	
 	bool get isClosed => _isClosed;
 	
 	void _markClosed() {

@@ -5,7 +5,7 @@ const kFileBuffSize = 2048;
 
 class FileWrapper implements _file.FileWrapper {
 	
-	FileWrapper(String filePath): file = null {
+	FileWrapper(String filePath) : file = null {
 		this._errMsg = 'Unsupport create by file path';
 	}
 	
