@@ -405,7 +405,7 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 	ReturnType appendQueryParams(String key, String value, {bool checkFirstParams = true, bool useEncode = true}) {
 		if (_requestOptions.checkExecutingStatus) {
 			if (key != null && key.isNotEmpty && value != null && value.isNotEmpty) {
-				final realValue = useEncode ? Uri.encodeComponent('value') : value;
+				final realValue = useEncode ? Uri.encodeComponent('$value') : value;
 				
 				if (checkFirstParams && _requestOptions.hasUrlParams != true) {
 					_requestOptions.url += '?';

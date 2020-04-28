@@ -126,3 +126,6 @@
 
 ## 2.0.1
 - 修复 addQueryParams 符号相反的问题
+
+## 2.0.2
+- 修复 addQueryParams 值错误问题
