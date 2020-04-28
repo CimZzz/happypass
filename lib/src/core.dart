@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'adapter/http_client.dart';
 import 'adapter/http_request.dart';

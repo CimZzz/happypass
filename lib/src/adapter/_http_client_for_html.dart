@@ -3,9 +3,9 @@ import '../http_proxy.dart';
 import '../http_errors.dart';
 import '../core.dart';
 import '_http_request_for_html.dart';
-import 'http_client.dart' as _httpClient;
+import 'http_client.dart' as httpClient;
 
-class PassHttpClient implements _httpClient.PassHttpClient {
+class PassHttpClient implements httpClient.PassHttpClient {
 	
 	/// 连接超时时间
 	/// * 只在 Native 端生效

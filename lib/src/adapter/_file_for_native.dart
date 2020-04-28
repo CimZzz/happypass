@@ -30,7 +30,7 @@ class FileWrapper implements _file.FileWrapper {
 			}
 			ioSink = tempFile.openWrite();
 			await ioSink.addStream(rawData);
-			ioSink.flush();
+			await ioSink.flush();
 			return true;
 		}
 		catch (e) {
