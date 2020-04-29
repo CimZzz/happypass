@@ -131,3 +131,6 @@
 - 修复 addQueryParams 值错误问题
 - 修复 clone 导致 UrlParams 重置问题
 - format code
+
+## 2.0.3
+- 修复 html 下，GET 方法无法返回的问题

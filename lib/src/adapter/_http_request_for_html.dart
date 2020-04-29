@@ -124,6 +124,10 @@ class PassHttpRequest implements _httpRequest.PassHttpRequest {
 		if (_isClosed) {
 			throw const HappyPassError('XMLHttpRequest is closed');
 		}
+		if(!isSendDataCompleted) {
+			_request.send();
+			isSendDataCompleted = true;
+		}
 		return _completer.future;
 	}
 	

@@ -189,6 +189,7 @@ class RequestOptions {
 			cloneObj.headerMap = Map.from(headerMap);
 		}
 		cloneObj.url = url;
+		cloneObj.resolveUrl = resolveUrl;
 		cloneObj.hasUrlParams = hasUrlParams;
 		cloneObj.needResolved = needResolved;
 		cloneObj.requestMethod = requestMethod;
