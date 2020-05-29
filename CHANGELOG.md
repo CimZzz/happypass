@@ -134,3 +134,6 @@
 
 ## 2.0.3
 - 修复 html 下，GET 方法无法返回的问题
+
+## 2.0.4
+- 为 `happypass_builder` 添加 `RequestClosable` 类，允许自动生成可以随时中断的请求
