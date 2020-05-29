@@ -137,3 +137,6 @@
 
 ## 2.0.4
 - 为 `happypass_builder` 添加 `RequestClosable` 类，允许自动生成可以随时中断的请求
+
+## 2.0.5
+- 外显 `RequestClosable`

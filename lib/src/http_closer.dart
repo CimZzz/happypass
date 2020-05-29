@@ -74,10 +74,13 @@ class RequestCloser {
 
 /// 可中断请求结果 Future
 class RequestClosable<T> implements Future<T> {
+	RequestClosable({RequestCloser closer, Future<T> future}):
+		_closer = closer, _future = future;
+
 	final RequestCloser _closer;
 	final Future<T> _future;
 
-	RequestClosable(this._closer, this._future);
+	Future<T> asFuture() => _future;
 
 	@override
 	Stream<T> asStream() => _future.asStream();
@@ -99,7 +102,7 @@ class RequestClosable<T> implements Future<T> {
 
 	/// 立即中断当前请求
 	void close({PassResponse finishResponse = _defaultErrorResponse}) {
-		_closer.close(finishResponse: _defaultErrorResponse);
+		_closer.close(finishResponse: finishResponse);
 	}
 }
 

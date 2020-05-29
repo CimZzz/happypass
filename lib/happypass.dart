@@ -18,7 +18,7 @@ FutureBuilder,
 RequestBodyEncodeCallback;
 export 'src/request_builder.dart';
 export 'src/form_data.dart';
-export 'src/http_closer.dart' show RequestCloser;
+export 'src/http_closer.dart' show RequestCloser, RequestClosable;
 export 'src/http_decoders.dart';
 export 'src/http_encoders.dart';
 export 'src/http_errors.dart';
