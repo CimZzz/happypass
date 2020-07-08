@@ -243,8 +243,6 @@ abstract class RequestBuilder<ReturnType> {
 
 /// 请求配置配置混合
 mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
-	
-	
 	/// 设置请求 id 方法
 	/// 为当前请求设置 id
 	/// * 请求 id 可以在任何时候设置
