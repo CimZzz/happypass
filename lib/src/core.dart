@@ -572,8 +572,8 @@ mixin RequestOptionMixin<ReturnType> on RequestBuilder<ReturnType> {
 		if (_requestOptions.checkExecutingStatus) {
 			clearEncoder();
 			clearDecoder();
-			addLastEncoder(const Utf8String2ByteEncoder());
 			addLastEncoder(const JSON2Utf8StringEncoder());
+			addLastEncoder(const Utf8String2ByteEncoder());
 			addLastDecoder(const Byte2Utf8StringDecoder(isAllowMalformed: true));
 			addLastDecoder(const Utf8String2JSONDecoder());
 		}

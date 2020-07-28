@@ -8,12 +8,12 @@ happy pass,pass happy to everybody!
 
 ### 快速集成
 
-当前最新版本为: 2.0.5
+当前最新版本为: 2.0.5+1
 
 在 "pubspec.yaml" 文件中加入
 ```yaml
 dependencies:
-  happypass: ^2.0.5
+  happypass: ^2.0.5+1
 ```
 
 [github](https://github.com/CimZzz/happypass)

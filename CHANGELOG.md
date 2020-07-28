@@ -140,3 +140,6 @@
 
 ## 2.0.5
 - 外显 `RequestClosable`
+
+## 2.0.5+1
+- 修复 JSONChannel 解码器编码器错误的问题
